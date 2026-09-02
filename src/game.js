@@ -789,7 +789,7 @@ export class Game {
             soundManager.playHit();
             this.hud.update(this, true); // Force HUD real-time update on hit!
 
-            const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-25 SHIELD' : '-30 HULL';
+            const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-25 SHIELD' : '-30 HEALTH';
             const textColor = result === 'OBSTACLE_SHIELD_SHATTER' ? '#00f0ff' : '#ff0055';
             this.particleSystem.addFloatingText(this.player.x, this.player.y, textLabel, textColor);
 
