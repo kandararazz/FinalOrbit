@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FinalOrbit - Ultimate 2D Space Shooter Arcade</title>
+  <meta name="description" content="A fast-paced, high-octane 2D Space Shooter arcade game with dynamic biomes, tactical dodge rolls, homing missiles, level editor, and adaptive retro audio.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <!-- CRT Scanline Shader Overlay -->
+  <div id="crt-overlay" class="crt-overlay"></div>
+
+  <!-- Damage Vignette Red Neon Border -->
+  <div id="damage-vignette" class="damage-vignette hidden"></div>
+
+  <!-- Custom Neon Mouse Targeting Crosshair -->
+  <div id="custom-crosshair" class="custom-crosshair hidden"></div>
+
+  <!-- Floating Rampage Neon Killstreak Banner -->
+  <div id="rampage-banner" class="rampage-banner hidden">💥 RAMPAGE! (1.5x MULTIPLIER) 💥</div>
+
+  <div id="game-container">
+    <!-- Main HTML5 Canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Holographic Radar -->
+    <div id="radar-container" class="radar-container hidden">
+      <div class="radar-title">RADAR</div>
+      <canvas id="radar-canvas" width="130" height="130"></canvas>
+    </div>
+
+    <!-- Top Boss Health Bar -->
+    <div id="boss-bar-container" class="boss-bar-container hidden">
+      <span class="boss-title">⚠️ DREADNOUGHT BOSS ⚠️</span>
+      <div class="boss-bar-outer">
+        <div id="boss-bar-inner" class="boss-bar-inner" style="width: 100%;"></div>
+      </div>
+    </div>
+
+    <!-- In-Game HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="hud-box score-box">
+          <span class="hud-label">SCORE</span>
+          <span id="score-val" class="hud-value">000000</span>
+          <div id="combo-badge" class="combo-badge hidden">COMBO x<span id="combo-val">1</span></div>
+        </div>
+
+        <div class="hud-center-info">
+          <div class="hud-box wave-box">
+            <span class="hud-label">WAVE</span>
+            <span id="wave-val" class="hud-value">1</span>
+          </div>
+          <div class="hud-box wins-box">
+            <span class="hud-label">WINS</span>
+            <span id="wins-val" class="hud-value cyan-text">🏆 0</span>
+          </div>
+          <div id="biome-badge" class="biome-badge">DEEP SPACE</div>
+        </div>
+
+        <div class="hud-box scrap-box">
+          <span class="hud-label">COINS</span>
+          <span id="scrap-val" class="hud-value gold-text">🪙 0</span>
+        </div>
+      </div>
+
+      <div class="hud-bottom">
+        <div class="status-bars">
+          <!-- Hull Bar -->
+          <div class="bar-container health-bar-container">
+            <span class="bar-label">HULL</span>
+            <div class="bar-outer">
+              <div id="health-bar-inner" class="bar-inner health-fill" style="width: 100%;"></div>
+            </div>
+            <span id="health-text" class="bar-text">100%</span>
+          </div>
+
+          <!-- Shield Bar -->
+          <div class="bar-container shield-bar-container">
+            <span class="bar-label">SHIELD</span>
+            <div class="bar-outer">
+              <div id="shield-bar-inner" class="bar-inner shield-fill" style="width: 100%;"></div>
+            </div>
+            <span id="shield-text" class="bar-text">100%</span>
+          </div>
+
+          <!-- Heat Bar -->
+          <div class="bar-container heat-bar-container">
+            <span class="bar-label">HEAT</span>
+            <div class="bar-outer">
+              <div id="heat-bar-inner" class="bar-inner heat-fill" style="width: 0%;"></div>
+            </div>
+            <span id="heat-text" class="bar-text">0%</span>
+          </div>
+        </div>
+
+        <div class="special-container">
+          <div class="tactical-actions">
+            <!-- Chrono Shift Meter -->
+            <button id="chrono-btn" class="tactical-btn chrono-btn">
+              <span>⏳ CHRONO (C)</span>
+              <div class="chrono-meter-outer">
+                <div id="chrono-meter-fill" class="chrono-meter-fill" style="width: 100%;"></div>
+              </div>
+            </button>
+
+            <!-- Dash Indicator -->
+            <div id="dash-badge" class="dash-badge ready">DASH [SHIFT]</div>
+          </div>
+
+          <div class="weapon-row">
+            <div class="weapon-mode-badge" id="weapon-badge">DUAL LASER</div>
+            <button id="bomb-btn" class="bomb-button">
+              💥 BOMB [<span id="bomb-count">1</span>] (B)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glowing Neon Wave Announcement Banner -->
+    <div id="wave-banner" class="wave-banner hidden">WAVE 1 CLEARED! +1 WIN</div>
+
+    <!-- On-Screen Mobile Action Button -->
+    <button id="mobile-bomb-btn" class="mobile-bomb-btn hidden">💥 SMART BOMB</button>
+
+    <!-- Controls Toolbar -->
+    <div class="quick-controls">
+      <button id="fullscreen-toggle" class="icon-btn" title="Toggle Fullscreen Mode (F11)">⛶</button>
+      <button id="mouse-toggle" class="icon-btn" title="Toggle Mouse Aim Mode">🖱️</button>
+      <button id="autofire-toggle" class="icon-btn" title="Toggle Auto-Fire (T)">🎯</button>
+      <button id="crt-toggle" class="icon-btn" title="Toggle CRT Filter (F)">📺</button>
+      <button id="audio-toggle" class="icon-btn" title="Toggle Audio (M)">🔊</button>
+    </div>
+
+    <!-- Start Screen Overlay -->
+    <div id="start-screen" class="overlay-screen active">
+      <div class="screen-content glow-panel">
+        <h1 class="game-title">Final<span class="accent-text">Orbit</span></h1>
+        <p class="game-subtitle">ULTIMATE CYBERNETIC ARCADE SHOOTER</p>
+
+        <div class="start-stats">
+          <div class="stat-pill">HIGH SCORE: <span id="start-high-score">0</span></div>
+          <div class="stat-pill cyan-pill">WINS: <span id="start-wins">🏆 0</span></div>
+          <div class="stat-pill gold-pill">COINS: <span id="start-scrap">🪙 0</span></div>
+        </div>
+
+        <div class="menu-actions">
+          <button id="start-btn" class="arcade-btn glow-btn">ENGAGE MISSION</button>
+          <div class="button-row">
+            <button id="shop-open-btn" class="arcade-btn secondary-btn">🛠️ HANGAR / AVATARS</button>
+            <button id="editor-open-btn" class="arcade-btn secondary-btn">🗺️ LEVEL EDITOR</button>
+            <button id="leaderboard-open-btn" class="arcade-btn secondary-btn">🏆 LEADERBOARD</button>
+          </div>
+        </div>
+
+        <div class="controls-card">
+          <h3>PILOT TACTICAL CONTROLS</h3>
+          <div class="control-grid">
+            <div class="control-item"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Arrows</kbd> <span>Ship Movement</span></div>
+            <div class="control-item"><kbd>SPACE</kbd> / <kbd>Left Click</kbd> <span>Fire Lasers</span></div>
+            <div class="control-item"><kbd>T</kbd> <span>Toggle Auto-Fire</span></div>
+            <div class="control-item"><kbd>SHIFT</kbd> / <kbd>Double-Tap</kbd> <span>Invincible Dash</span></div>
+            <div class="control-item"><kbd>S</kbd> <kbd>S</kbd> (Double Tap) <span>EMP Ring</span></div>
+            <div class="control-item"><kbd>C</kbd> <span>Chrono Shift (Bullet Time)</span></div>
+            <div class="control-item"><kbd>B</kbd> / <kbd>Right Click</kbd> <span>Smart Bomb</span></div>
+            <div class="control-item"><kbd>TOUCH</kbd> <span>Follow Finger (-40px offset)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hangar Shop Modal -->
+    <div id="shop-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel wide-panel">
+        <h2 class="screen-title">HANGAR / AVATARS</h2>
+        <p class="screen-desc">UPGRADE BASE STATS AND UNLOCK NEON SHIP AVATARS</p>
+
+        <div class="scrap-balance">AVAILABLE COINS: <span id="shop-scrap-balance" class="gold-text">🪙 0</span></div>
+
+        <!-- Hangar Tabs -->
+        <div class="shop-tabs">
+          <button id="shop-tab-1" class="tab-btn active">TAB 1: SHIP UPGRADES</button>
+          <button id="shop-tab-2" class="tab-btn">TAB 2: SHIP AVATARS</button>
+        </div>
+
+        <!-- Tab 1: Stat Upgrades -->
+        <div id="shop-panel-1" class="shop-grid">
+          <div class="shop-card">
+            <h4>🛡️ MAX HULL</h4>
+            <p>+10% Hull & Shield capacity per tier.</p>
+            <div class="upgrade-level">LVL <span id="lvl-armor">1</span> / 3</div>
+            <button id="buy-armor-btn" class="buy-btn">UPGRADE (<span id="cost-armor">100</span> COINS)</button>
+          </div>
+
+          <div class="shop-card">
+            <h4>⚡ SHIELD RECOVERY</h4>
+            <p>-0.5s Shield recharge cooldown delay per tier.</p>
+            <div class="upgrade-level">LVL <span id="lvl-shieldRecovery">1</span> / 3</div>
+            <button id="buy-shieldRecovery-btn" class="buy-btn">UPGRADE (<span id="cost-shieldRecovery">150</span> COINS)</button>
+          </div>
+
+          <div class="shop-card">
+            <h4>🧲 COIN MAGNET</h4>
+            <p>+50px Coin attraction radius per tier.</p>
+            <div class="upgrade-level">LVL <span id="lvl-magnet">1</span> / 3</div>
+            <button id="buy-magnet-btn" class="buy-btn">UPGRADE (<span id="cost-magnet">100</span> COINS)</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Ship Avatars (Skins) -->
+        <div id="shop-panel-2" class="shop-grid hidden">
+          <div class="shop-card avatar-card">
+            <h4 style="color: #00f0ff;">VIPER</h4>
+            <p>Sleek Cyan Fighter (Default / Free)</p>
+            <button id="select-avatar-apex_viper" class="buy-btn">EQUIPPED</button>
+          </div>
+
+          <div class="shop-card avatar-card">
+            <h4 style="color: #39ff14;">VENOM PHANTOM</h4>
+            <p>Acid Green Sleek Delta Wings (250 Coins)</p>
+            <button id="select-avatar-venom_phantom" class="buy-btn">UNLOCK (250 COINS)</button>
+          </div>
+
+          <div class="shop-card avatar-card">
+            <h4 style="color: #ff0033;">CRIMSON APEX</h4>
+            <p>Red & Gold Twin Split Hull (600 Coins)</p>
+            <button id="select-avatar-crimson_apex" class="buy-btn">UNLOCK (600 COINS)</button>
+          </div>
+
+          <div class="shop-card avatar-card">
+            <h4 style="color: #a000ff;">VOID PHANTOM</h4>
+            <p>Purple Sharper Delta Wings (500 Coins)</p>
+            <button id="select-avatar-void_phantom" class="buy-btn">UNLOCK (500 COINS)</button>
+          </div>
+
+          <div class="shop-card avatar-card">
+            <h4 style="color: #ff5500;">AEGIS TITAN</h4>
+            <p>Orange Heavy Armor Hull (1000 Coins)</p>
+            <button id="select-avatar-aegis_titan" class="buy-btn">UNLOCK (1000 COINS)</button>
+          </div>
+        </div>
+
+        <button id="shop-close-btn" class="arcade-btn glow-btn margin-top-20">BACK TO HANGAR</button>
+      </div>
+    </div>
+
+    <!-- Perk Draft Modal -->
+    <div id="perk-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel wide-panel">
+        <h2 class="screen-title gold-text">WAVE CLEAR - CHOOSE AN AUGMENT</h2>
+        <p class="screen-desc">DRAFT 1 PERK TO UPGRADE YOUR SHIP FOR THIS RUN</p>
+        <div id="perk-cards-container" class="perk-cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- Campaign Victory Screen -->
+    <div id="victory-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel victory-panel">
+        <h1 class="screen-title gold-text" style="font-size: 2.2rem; text-shadow: 0 0 20px #ffea00;">CAMPAIGN VICTORY!</h1>
+        <p class="screen-desc" style="color: #00ff66; font-weight: 700;">ALL 50 WAVES CONQUERED</p>
+
+        <div class="victory-rewards" style="margin: 15px 0; display: flex; gap: 15px; justify-content: center;">
+          <div class="stat-pill gold-pill" style="font-size: 1.1rem;">+500 BONUS COINS</div>
+          <div class="stat-pill cyan-pill" style="font-size: 1.1rem;">+5 BONUS WINS</div>
+        </div>
+
+        <div class="results-grid">
+          <div class="result-box">
+            <span class="result-label">TOTAL WINS</span>
+            <span id="victory-wins" class="result-val cyan-text">0</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">FINAL SCORE</span>
+            <span id="victory-score" class="result-val">0</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">TOTAL COINS</span>
+            <span id="victory-coins" class="result-val gold-text">🪙 0</span>
+          </div>
+        </div>
+
+        <div class="button-row margin-top-20">
+          <button id="victory-hangar-btn" class="arcade-btn secondary-btn">RETURN TO HANGAR</button>
+          <button id="victory-endless-btn" class="arcade-btn glow-btn">START ENDLESS MODE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Editor Modal -->
+    <div id="editor-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel extra-wide-panel">
+        <h2 class="screen-title">CUSTOM LEVEL EDITOR</h2>
+        <p class="screen-desc">DRAG & PLACE ENEMIES AND HAZARDS TO BUILD CUSTOM WAVES</p>
+
+        <div class="editor-layout">
+          <div class="editor-palette">
+            <h3>PALETTE</h3>
+            <button class="palette-item active" data-type="drone">Drone Enemy</button>
+            <button class="palette-item" data-type="scout">Scout Enemy</button>
+            <button class="palette-item" data-type="cruiser">Cruiser Enemy</button>
+            <button class="palette-item" data-type="swarmer">Swarmer Enemy</button>
+            <button class="palette-item" data-type="stinger">Kamikaze Stinger</button>
+            <button class="palette-item" data-type="anchor">Shield Anchor</button>
+            <button class="palette-item" data-type="shield_bearer">Shield Bearer</button>
+            <button class="palette-item" data-type="asteroid">Asteroid</button>
+            <button class="palette-item" data-type="boss">Boss Dreadnought</button>
+          </div>
+
+          <div class="editor-grid-container">
+            <canvas id="editor-canvas" width="400" height="400"></canvas>
+          </div>
+
+          <div class="editor-io">
+            <h3>JSON WAVE CONFIG</h3>
+            <textarea id="editor-json-text" placeholder="Paste custom JSON level code here..."></textarea>
+            <div class="editor-actions">
+              <button id="editor-export-btn" class="arcade-btn secondary-btn">EXPORT JSON</button>
+              <button id="editor-play-btn" class="arcade-btn glow-btn">PLAY CUSTOM WAVE</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="editor-close-btn" class="arcade-btn secondary-btn margin-top-20">CLOSE EDITOR</button>
+      </div>
+    </div>
+
+    <!-- Global Leaderboard Modal -->
+    <div id="leaderboard-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel">
+        <h2 class="screen-title gold-text">GLOBAL LEADERBOARD (SUPABASE)</h2>
+        <p class="screen-desc">TOP RANKED PILOTS IN FINALORBIT</p>
+
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>RANK</th>
+                <th>PILOT</th>
+                <th>SCORE</th>
+                <th>WAVE</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-rows"></tbody>
+          </table>
+        </div>
+
+        <button id="leaderboard-close-btn" class="arcade-btn glow-btn margin-top-20">CLOSE LEADERBOARD</button>
+      </div>
+    </div>
+
+    <!-- Pause Screen -->
+    <div id="pause-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel">
+        <h2 class="screen-title">SYSTEM PAUSED</h2>
+        <div class="pause-actions">
+          <button id="resume-btn" class="arcade-btn glow-btn">RESUME MISSION</button>
+          <button id="restart-pause-btn" class="arcade-btn secondary-btn">ABORT & RESTART</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel alert-panel">
+        <h2 class="screen-title danger-text">MISSION FAILED</h2>
+        <p class="screen-desc">SHIP DESTROYED IN DEEP SPACE</p>
+
+        <div class="results-grid">
+          <div class="result-box">
+            <span class="result-label">FINAL SCORE</span>
+            <span id="final-score" class="result-val">0</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">WAVE REACHED</span>
+            <span id="final-wave" class="result-val">1</span>
+          </div>
+          <div class="result-box">
+            <span class="result-label">COINS EARNED</span>
+            <span id="final-scrap" class="result-val gold-text">🪙 0</span>
+          </div>
+        </div>
+
+        <div id="new-high-score-banner" class="high-score-banner hidden">
+          🏆 NEW HIGH SCORE RECORD! 🏆
+        </div>
+
+        <div class="button-row margin-top-20">
+          <button id="restart-btn" class="arcade-btn glow-btn">REDEPLOY SHIP</button>
+          <button id="game-over-shop-btn" class="arcade-btn secondary-btn">HANGAR / AVATARS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
