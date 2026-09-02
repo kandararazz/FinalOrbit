@@ -714,9 +714,9 @@ canvas#radar-canvas {
 /* Quick Controls Toolbar - Pushed Top Right */
 .quick-controls {
   position: absolute;
-  top: 10px;
-  right: 16px;
-  z-index: 20;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  z-index: 60;
   display: flex;
   gap: 8px;
 }
