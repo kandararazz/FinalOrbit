@@ -161,6 +161,23 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const submitScoreBtn = document.getElementById('submit-score-btn');
+  if (submitScoreBtn) {
+    submitScoreBtn.addEventListener('click', () => {
+      const inputEl = document.getElementById('gameover-callsign-input');
+      const name = inputEl ? inputEl.value : '';
+      game.leaderboard.setPilotName(name);
+      game.leaderboard.addScore(game.score, game.wave, name);
+      submitScoreBtn.textContent = 'SUBMITTED!';
+      submitScoreBtn.classList.add('equipped-btn');
+      setTimeout(() => {
+        document.getElementById('game-over-screen').classList.add('hidden');
+        game.leaderboard.render();
+        leaderboardScreen.classList.remove('hidden');
+      }, 500);
+    });
+  }
+
   // Fullscreen API Integration
   function toggleFullscreen() {
     if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {

@@ -168,6 +168,11 @@
           <div class="stat-pill gold-pill">COINS: <span id="start-scrap">🪙 0</span></div>
         </div>
 
+        <div class="callsign-box">
+          <label for="pilot-callsign-input" class="callsign-label">👨‍✈️ PILOT CALLSIGN:</label>
+          <input type="text" id="pilot-callsign-input" class="cyber-input" maxlength="12" placeholder="ENTER CALLSIGN..." value="PILOT_RAZA" autocomplete="off" spellcheck="false">
+        </div>
+
         <div class="menu-actions">
           <button id="start-btn" class="arcade-btn glow-btn launch-btn">▶ LAUNCH MISSION</button>
           <div class="button-row">
@@ -379,6 +384,14 @@
         <h2 class="screen-title gold-text">GLOBAL LEADERBOARD (SUPABASE)</h2>
         <p class="screen-desc">TOP RANKED PILOTS IN FINALORBIT</p>
 
+        <div class="callsign-box leaderboard-callsign-bar">
+          <label for="leaderboard-callsign-input" class="callsign-label">👨‍✈️ YOUR CALLSIGN:</label>
+          <div class="input-row">
+            <input type="text" id="leaderboard-callsign-input" class="cyber-input" maxlength="12" placeholder="CALLSIGN..." value="PILOT_RAZA" autocomplete="off" spellcheck="false">
+            <button id="save-callsign-btn" class="arcade-btn secondary-btn small-btn">SAVE</button>
+          </div>
+        </div>
+
         <div class="leaderboard-table-container">
           <table class="leaderboard-table">
             <thead>
@@ -433,6 +446,14 @@
 
         <div id="new-high-score-banner" class="high-score-banner hidden">
           🏆 NEW HIGH SCORE RECORD! 🏆
+        </div>
+
+        <div class="callsign-box gameover-callsign-box">
+          <label for="gameover-callsign-input" class="callsign-label">👨‍✈️ SUBMIT CALLSIGN TO LEADERBOARD:</label>
+          <div class="input-row">
+            <input type="text" id="gameover-callsign-input" class="cyber-input" maxlength="12" placeholder="ENTER CALLSIGN..." value="PILOT_RAZA" autocomplete="off" spellcheck="false">
+            <button id="submit-score-btn" class="arcade-btn glow-btn inline-btn">SUBMIT</button>
+          </div>
         </div>
 
         <div class="button-row margin-top-20">

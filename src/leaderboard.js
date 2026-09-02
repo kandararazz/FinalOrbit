@@ -17,9 +17,63 @@ export class LeaderboardManager {
     this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
     this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+    this.pilotName = this.loadPilotName();
     this.scores = this.loadScores();
+    this.setupInputListeners();
     this.render();
     this.fetchFromSupabase();
+  }
+
+  loadPilotName() {
+    try {
+      const saved = localStorage.getItem('final_orbit_pilot_name');
+      if (saved && saved.trim()) return saved.trim().toUpperCase().slice(0, 12);
+    } catch (e) {}
+    return 'PILOT_RAZA';
+  }
+
+  setPilotName(name) {
+    const clean = (name || 'PILOT').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12) || 'PILOT';
+    this.pilotName = clean;
+    try {
+      localStorage.setItem('final_orbit_pilot_name', clean);
+    } catch (e) {}
+    this.syncInputFields();
+  }
+
+  syncInputFields() {
+    ['pilot-callsign-input', 'gameover-callsign-input', 'leaderboard-callsign-input'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.value !== this.pilotName) {
+        el.value = this.pilotName;
+      }
+    });
+  }
+
+  setupInputListeners() {
+    const bindInput = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = this.pilotName;
+      el.addEventListener('input', (e) => {
+        this.setPilotName(e.target.value);
+      });
+      el.addEventListener('change', (e) => {
+        this.setPilotName(e.target.value);
+      });
+    };
+
+    bindInput('pilot-callsign-input');
+    bindInput('gameover-callsign-input');
+    bindInput('leaderboard-callsign-input');
+
+    const saveBtn = document.getElementById('save-callsign-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        const el = document.getElementById('leaderboard-callsign-input');
+        if (el) this.setPilotName(el.value);
+      });
+    }
   }
 
   loadScores() {
@@ -59,7 +113,7 @@ export class LeaderboardManager {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           this.scores = data.map(item => ({
-            name: (item.pilot_name || item.name || 'PILOT').toUpperCase().slice(0, 10),
+            name: (item.pilot_name || item.name || 'PILOT').toUpperCase().slice(0, 12),
             score: Number(item.score) || 0,
             wave: Number(item.wave) || 1
           }));
@@ -94,9 +148,10 @@ export class LeaderboardManager {
     }
   }
 
-  addScore(score, wave, pilotName = 'PILOT_RAZA') {
+  addScore(score, wave, pilotName) {
+    const nameToUse = pilotName || this.pilotName || 'PILOT_RAZA';
     const newEntry = {
-      name: (pilotName || 'PILOT').toUpperCase().slice(0, 10),
+      name: (nameToUse || 'PILOT').toUpperCase().slice(0, 12),
       score: Number(score) || 0,
       wave: Number(wave) || 1
     };
