@@ -291,50 +291,38 @@ export class Game {
       }
     });
 
-    const mouseBtn = document.getElementById('mouse-toggle');
-    if (mouseBtn) {
-      mouseBtn.addEventListener('click', () => {
-        this.mouseAimEnabled = !this.mouseAimEnabled;
-        mouseBtn.classList.toggle('active', this.mouseAimEnabled);
-        if (this.crosshairEl) {
-          if (this.mouseAimEnabled) this.crosshairEl.classList.remove('hidden');
-          else this.crosshairEl.classList.add('hidden');
-        }
-        this.player.mouseControlActive = this.mouseAimEnabled;
-      });
-    }
+    bindVirtualBtn('mouse-toggle', () => {
+      this.mouseAimEnabled = !this.mouseAimEnabled;
+      const mouseBtn = document.getElementById('mouse-toggle');
+      if (mouseBtn) mouseBtn.classList.toggle('active', this.mouseAimEnabled);
+      if (this.crosshairEl) {
+        if (this.mouseAimEnabled) this.crosshairEl.classList.remove('hidden');
+        else this.crosshairEl.classList.add('hidden');
+      }
+      this.player.mouseControlActive = this.mouseAimEnabled;
+    });
 
-    const autoBtn = document.getElementById('autofire-toggle');
-    if (autoBtn) {
-      autoBtn.addEventListener('click', () => {
-        this.player.autoFirePermanent = !this.player.autoFirePermanent;
-        autoBtn.classList.toggle('active', this.player.autoFirePermanent);
-      });
-    }
+    bindVirtualBtn('autofire-toggle', () => {
+      this.player.autoFirePermanent = !this.player.autoFirePermanent;
+      const autoBtn = document.getElementById('autofire-toggle');
+      if (autoBtn) autoBtn.classList.toggle('active', this.player.autoFirePermanent);
+    });
 
-    const bombBtn = document.getElementById('bomb-btn');
-    if (bombBtn) {
-      bombBtn.addEventListener('click', () => {
-        if (this.state === GAME_STATES.PLAYING) this.triggerSmartBomb();
-      });
-    }
+    bindVirtualBtn('bomb-btn', () => {
+      if (this.state === GAME_STATES.PLAYING) this.triggerSmartBomb();
+    });
 
-    const chronoBtn = document.getElementById('chrono-btn');
-    if (chronoBtn) {
-      chronoBtn.addEventListener('click', () => {
-        if (this.state === GAME_STATES.PLAYING) this.triggerChronoShift();
-      });
-    }
+    bindVirtualBtn('chrono-btn', () => {
+      if (this.state === GAME_STATES.PLAYING) this.triggerChronoShift();
+    });
 
-    const crtBtn = document.getElementById('crt-toggle');
-    if (crtBtn) {
-      crtBtn.addEventListener('click', () => this.hud.toggleCRT());
-    }
+    bindVirtualBtn('crt-toggle', () => {
+      this.hud.toggleCRT();
+    });
 
-    const audioBtn = document.getElementById('audio-toggle');
-    if (audioBtn) {
-      audioBtn.addEventListener('click', () => this.toggleAudio());
-    }
+    bindVirtualBtn('audio-toggle', () => {
+      this.toggleAudio();
+    });
   }
 
   toggleAudio() {

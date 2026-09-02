@@ -55,6 +55,8 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   pointer-events: none;
   z-index: 99;
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
@@ -93,7 +95,7 @@ html, body {
   transform: translateX(-50%);
   z-index: 25;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
   font-weight: 900;
   color: var(--neon-yellow);
   background: rgba(255, 234, 0, 0.2);
@@ -116,6 +118,8 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   pointer-events: none;
   z-index: 98;
   box-shadow: inset 0 0 80px rgba(255, 0, 85, 0.8), inset 0 0 30px rgba(255, 0, 0, 0.9);
@@ -145,6 +149,7 @@ html, body {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  overscroll-behavior: none;
 }
 
 @media (min-width: 1200px) and (min-height: 900px) {
@@ -159,18 +164,21 @@ canvas#game-canvas {
   height: 100%;
   display: block;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
 }
 
-/* Circular Neon On-Screen Mobile Smart Bomb Button (Bottom-Right 64x64px) */
+/* Circular Neon On-Screen Mobile Smart Bomb Button (Min 48x48px Footprint) */
 .mobile-bomb-btn {
   position: absolute;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  right: max(16px, env(safe-area-inset-right));
   z-index: 55;
   width: 64px;
   height: 64px;
-  min-width: 64px;
-  min-height: 64px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   font-family: var(--font-display);
   background: radial-gradient(circle at 35% 35%, #ff5500 0%, #ff0055 60%, #990033 100%);
@@ -235,16 +243,16 @@ canvas#game-canvas {
   display: none;
 }
 
-/* Circular Neon On-Screen Mobile Dash / Shield Boost Button (Bottom-Left 56x56px) */
+/* Circular Neon On-Screen Mobile Dash / Shield Boost Button (Min 48x48px Footprint) */
 .mobile-dash-btn {
   position: absolute;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  left: calc(20px + env(safe-area-inset-left, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: max(16px, env(safe-area-inset-left));
   z-index: 55;
   width: 56px;
   height: 56px;
-  min-width: 56px;
-  min-height: 56px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   font-family: var(--font-display);
   background: radial-gradient(circle at 35% 35%, #0088ff 0%, #00f0ff 60%, #0044aa 100%);
@@ -290,11 +298,11 @@ canvas#game-canvas {
   display: none;
 }
 
-/* Top-Right Header Mobile Quick Controls (Min 44x44px Touch Targets) */
+/* Top-Right Header Mobile Quick Controls (Min 48x48px Touch Targets) */
 .mobile-header-controls {
   position: absolute;
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  right: calc(10px + env(safe-area-inset-right, 0px));
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
   z-index: 60;
   display: flex;
   gap: 8px;
@@ -306,10 +314,10 @@ canvas#game-canvas {
 }
 
 .mobile-icon-btn {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 8px;
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
@@ -324,6 +332,7 @@ canvas#game-canvas {
   touch-action: none;
   box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
   transition: transform 0.1s ease, filter 0.1s ease;
+  pointer-events: auto;
 }
 
 .mobile-icon-btn:active, .mobile-icon-btn.touch-active {
@@ -335,7 +344,7 @@ canvas#game-canvas {
 /* Boss Top Health Bar Overlay */
 .boss-bar-container {
   position: absolute;
-  top: 15px;
+  top: max(15px, env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   width: 50%;
@@ -359,7 +368,7 @@ canvas#game-canvas {
 
 .boss-title {
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 2vw, 0.85rem);
   font-weight: 800;
   color: var(--danger-color);
   letter-spacing: 2px;
@@ -383,8 +392,8 @@ canvas#game-canvas {
 /* Holographic Radar Mini-Map - Docked Top-Left Under Score */
 .radar-container {
   position: absolute;
-  top: 62px;
-  left: 16px;
+  top: max(62px, calc(52px + env(safe-area-inset-top)));
+  left: max(16px, env(safe-area-inset-left));
   z-index: 12;
   background: rgba(3, 7, 18, 0.85);
   border: 1px solid rgba(0, 240, 255, 0.4);
@@ -417,7 +426,7 @@ canvas#radar-canvas {
   display: block;
 }
 
-/* In-Game HUD - Ultra Compact Edge Docking */
+/* In-Game HUD - Ultra Compact Edge Docking & Safe Areas */
 #hud {
   position: absolute;
   top: 0;
@@ -428,9 +437,13 @@ canvas#radar-canvas {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
   z-index: 10;
   transition: opacity 0.3s ease;
+  font-variant-numeric: tabular-nums;
 }
 
 #hud.hidden {
@@ -442,11 +455,13 @@ canvas#radar-canvas {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .hud-left-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -459,18 +474,18 @@ canvas#radar-canvas {
 
 .hud-center-boxes {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .biome-badge {
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: clamp(0.55rem, 1.8vw, 0.65rem);
   font-weight: 800;
   letter-spacing: 1.5px;
   color: var(--neon-cyan);
   background: rgba(0, 240, 255, 0.12);
   border: 1px solid var(--neon-cyan);
-  padding: 2px 10px;
+  padding: 2px 8px;
   border-radius: 10px;
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
@@ -484,28 +499,30 @@ canvas#radar-canvas {
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 240, 255, 0.3);
-  padding: 4px 12px;
+  padding: 4px 8px;
   border-radius: 6px;
   box-shadow: var(--border-glow);
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 85px;
+  min-width: clamp(60px, 16vw, 90px);
+  font-variant-numeric: tabular-nums;
 }
 
 .hud-label {
   font-family: var(--font-display);
-  font-size: 0.6rem;
+  font-size: clamp(0.5rem, 1.6vw, 0.6rem);
   letter-spacing: 1px;
   color: var(--text-muted);
 }
 
 .hud-value {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: clamp(0.75rem, 2.5vw, 0.95rem);
   font-weight: 800;
   color: var(--neon-cyan);
   text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  font-variant-numeric: tabular-nums;
 }
 
 .combo-badge {
@@ -537,30 +554,29 @@ canvas#radar-canvas {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 210px;
+  width: clamp(80px, 25vw, 140px);
 }
 
 .top-status-bars {
   margin-left: auto;
-  margin-right: 280px;
 }
 
 .bar-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
+  padding: 3px 6px;
   border-radius: 6px;
 }
 
 .bar-label {
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: clamp(0.5rem, 1.6vw, 0.6rem);
   font-weight: 700;
-  width: 42px;
+  width: 36px;
   color: var(--text-muted);
 }
 
@@ -596,10 +612,11 @@ canvas#radar-canvas {
 
 .bar-text {
   font-family: var(--font-display);
-  font-size: 0.65rem;
-  width: 36px;
+  font-size: clamp(0.55rem, 1.8vw, 0.65rem);
+  width: 32px;
   text-align: right;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .special-container {
@@ -618,7 +635,7 @@ canvas#radar-canvas {
 .chrono-btn {
   pointer-events: auto;
   font-family: var(--font-display);
-  font-size: 0.7rem;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
   font-weight: 800;
   color: var(--neon-cyan);
   background: var(--panel-bg);
@@ -652,7 +669,7 @@ canvas#radar-canvas {
 
 .dash-badge {
   font-family: var(--font-display);
-  font-size: 0.7rem;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
   font-weight: 800;
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.1);
@@ -678,7 +695,7 @@ canvas#radar-canvas {
 
 .weapon-mode-badge {
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
   font-weight: 800;
   color: var(--neon-magenta);
   background: rgba(255, 0, 119, 0.15);
@@ -694,7 +711,7 @@ canvas#radar-canvas {
 .bomb-button {
   pointer-events: auto;
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: clamp(0.7rem, 2.2vw, 0.85rem);
   font-weight: 700;
   color: #fff;
   background: linear-gradient(135deg, #ff5500, #ff0055);
@@ -711,11 +728,11 @@ canvas#radar-canvas {
   transition: all 0.2s ease;
 }
 
-/* Quick Controls Toolbar - Pushed Top Right */
+/* Quick Controls Toolbar - Pushed Top Right with Safe Areas */
 .quick-controls {
   position: absolute;
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  right: calc(16px + env(safe-area-inset-right, 0px));
+  top: max(10px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
   z-index: 60;
   display: flex;
   gap: 8px;
@@ -748,11 +765,6 @@ canvas#radar-canvas {
   background: rgba(0, 240, 255, 0.2);
 }
 
-.icon-btn:hover {
-  transform: scale(1.1);
-  background: rgba(0, 240, 255, 0.2);
-}
-
 .icon-btn.active {
   border-color: var(--neon-green);
   box-shadow: 0 0 12px var(--neon-green);
@@ -773,6 +785,10 @@ canvas#radar-canvas {
   align-items: center;
   opacity: 1;
   transition: opacity 0.3s ease;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .overlay-screen.hidden {
@@ -784,18 +800,19 @@ canvas#radar-canvas {
   background: var(--panel-bg);
   border: 1px solid rgba(0, 240, 255, 0.4);
   border-radius: 12px;
-  padding: 35px;
-  width: 90%;
+  padding: 24px 28px;
+  width: 92%;
   max-width: 560px;
   text-align: center;
   box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   max-height: 90vh;
   overflow-y: auto;
 }
+
 
 .wide-panel {
   max-width: 800px;
@@ -1415,11 +1432,11 @@ canvas#editor-canvas {
   border-width: 0 3px 3px 0;
 }
 
-.neon-title {
+.neon-title, .game-title, .screen-title {
   font-family: var(--font-display);
-  font-size: 2.8rem;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
   font-weight: 900;
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   color: #fff;
   text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan);
 }
@@ -1428,12 +1445,12 @@ canvas#editor-canvas {
   color: var(--neon-cyan);
 }
 
-.hazard-subtitle {
+.hazard-subtitle, .screen-desc {
   color: #8fa0c0;
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: clamp(0.75rem, 2.5vw, 1rem);
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
 }
 
 .button-row {
