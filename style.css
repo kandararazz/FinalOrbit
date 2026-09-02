@@ -217,17 +217,17 @@ canvas#game-canvas {
   transition: width 0.1s linear;
 }
 
-/* Holographic Radar Mini-Map */
+/* Holographic Radar Mini-Map - Docked Top-Left Under Score */
 .radar-container {
   position: absolute;
-  bottom: 150px;
-  left: 30px;
+  top: 62px;
+  left: 16px;
   z-index: 12;
-  background: rgba(5, 10, 25, 0.85);
+  background: rgba(3, 7, 18, 0.85);
   border: 1px solid rgba(0, 240, 255, 0.4);
   border-radius: 50%;
-  padding: 4px;
-  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+  padding: 3px;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
   pointer-events: none;
   display: flex;
   flex-direction: column;
@@ -240,19 +240,21 @@ canvas#game-canvas {
 
 .radar-title {
   position: absolute;
-  top: -18px;
+  top: -14px;
   font-family: var(--font-display);
-  font-size: 0.65rem;
+  font-size: 0.55rem;
   color: var(--neon-cyan);
   letter-spacing: 1px;
 }
 
 canvas#radar-canvas {
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   display: block;
 }
 
-/* In-Game HUD */
+/* In-Game HUD - Ultra Compact Edge Docking */
 #hud {
   position: absolute;
   top: 0;
@@ -263,7 +265,7 @@ canvas#radar-canvas {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 20px 30px;
+  padding: 10px 16px;
   z-index: 10;
   transition: opacity 0.3s ease;
 }
@@ -279,24 +281,35 @@ canvas#radar-canvas {
   align-items: flex-start;
 }
 
+.hud-left-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .hud-center-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+
+.hud-center-boxes {
+  display: flex;
+  gap: 8px;
 }
 
 .biome-badge {
   font-family: var(--font-display);
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   color: var(--neon-cyan);
-  background: rgba(0, 240, 255, 0.15);
+  background: rgba(0, 240, 255, 0.12);
   border: 1px solid var(--neon-cyan);
-  padding: 3px 12px;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  padding: 2px 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
 
 .gold-text {
@@ -308,41 +321,41 @@ canvas#radar-canvas {
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 240, 255, 0.3);
-  padding: 8px 18px;
+  padding: 4px 12px;
   border-radius: 6px;
   box-shadow: var(--border-glow);
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 130px;
+  min-width: 85px;
 }
 
 .hud-label {
   font-family: var(--font-display);
-  font-size: 0.7rem;
-  letter-spacing: 2px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
   color: var(--text-muted);
 }
 
 .hud-value {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--neon-cyan);
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
 }
 
 .combo-badge {
-  margin-top: 4px;
+  margin-top: 2px;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: var(--neon-yellow);
   background: rgba(255, 234, 0, 0.15);
   border: 1px solid var(--neon-yellow);
-  padding: 2px 8px;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(255, 234, 0, 0.5);
+  padding: 1px 6px;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(255, 234, 0, 0.5);
   animation: pulse-glow 1s infinite alternate;
 }
 
@@ -354,46 +367,47 @@ canvas#radar-canvas {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  padding-bottom: 4px;
 }
 
 .status-bars {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 280px;
+  gap: 5px;
+  width: 210px;
 }
 
 .bar-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--panel-bg);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 6px;
 }
 
 .bar-label {
   font-family: var(--font-display);
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  width: 50px;
+  width: 42px;
   color: var(--text-muted);
 }
 
 .bar-outer {
   flex-grow: 1;
-  height: 10px;
+  height: 7px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .bar-inner {
   height: 100%;
   width: 100%;
-  border-radius: 5px;
+  border-radius: 4px;
   transition: width 0.2s ease-out;
 }
 
@@ -414,8 +428,8 @@ canvas#radar-canvas {
 
 .bar-text {
   font-family: var(--font-display);
-  font-size: 0.75rem;
-  width: 40px;
+  font-size: 0.65rem;
+  width: 36px;
   text-align: right;
   font-weight: 700;
 }
@@ -424,36 +438,36 @@ canvas#radar-canvas {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tactical-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
 .chrono-btn {
   pointer-events: auto;
   font-family: var(--font-display);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: var(--neon-cyan);
   background: var(--panel-bg);
   border: 1px solid var(--neon-cyan);
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
 }
 
 .chrono-meter-outer {
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   overflow: hidden;
@@ -515,24 +529,24 @@ canvas#radar-canvas {
   transition: all 0.2s ease;
 }
 
-/* Quick Controls Toolbar */
+/* Quick Controls Toolbar - Pushed Top Right */
 .quick-controls {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 10px;
+  right: 16px;
   z-index: 20;
   display: flex;
-  gap: 10px;
+  gap: 6px;
 }
 
 .icon-btn {
   background: var(--panel-bg);
   border: 1px solid rgba(0, 240, 255, 0.4);
   color: var(--neon-cyan);
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -540,6 +554,7 @@ canvas#radar-canvas {
   backdrop-filter: blur(8px);
   box-shadow: var(--border-glow);
   transition: all 0.2s ease;
+  pointer-events: auto;
 }
 
 .icon-btn:hover {

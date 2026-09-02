@@ -30,7 +30,7 @@
     <!-- Holographic Radar -->
     <div id="radar-container" class="radar-container hidden">
       <div class="radar-title">RADAR</div>
-      <canvas id="radar-canvas" width="130" height="130"></canvas>
+      <canvas id="radar-canvas" width="90" height="90"></canvas>
     </div>
 
     <!-- Top Boss Health Bar -->
@@ -44,28 +44,33 @@
     <!-- In-Game HUD -->
     <div id="hud" class="hidden">
       <div class="hud-top">
-        <div class="hud-box score-box">
-          <span class="hud-label">SCORE</span>
-          <span id="score-val" class="hud-value">000000</span>
-          <div id="combo-badge" class="combo-badge hidden">COMBO x<span id="combo-val">1</span></div>
+        <div class="hud-left-group">
+          <div class="hud-box score-box">
+            <span class="hud-label">SCORE</span>
+            <span id="score-val" class="hud-value">000000</span>
+            <div id="combo-badge" class="combo-badge hidden">COMBO x<span id="combo-val">1</span></div>
+          </div>
+          <div class="hud-box scrap-box">
+            <span class="hud-label">COINS</span>
+            <span id="scrap-val" class="hud-value gold-text">🪙 0</span>
+          </div>
         </div>
 
         <div class="hud-center-info">
-          <div class="hud-box wave-box">
-            <span class="hud-label">WAVE</span>
-            <span id="wave-val" class="hud-value">1</span>
-          </div>
-          <div class="hud-box wins-box">
-            <span class="hud-label">WINS</span>
-            <span id="wins-val" class="hud-value cyan-text">🏆 0</span>
+          <div class="hud-center-boxes">
+            <div class="hud-box wave-box">
+              <span class="hud-label">WAVE</span>
+              <span id="wave-val" class="hud-value">1</span>
+            </div>
+            <div class="hud-box wins-box">
+              <span class="hud-label">WINS</span>
+              <span id="wins-val" class="hud-value cyan-text">🏆 0</span>
+            </div>
           </div>
           <div id="biome-badge" class="biome-badge">DEEP SPACE</div>
         </div>
 
-        <div class="hud-box scrap-box">
-          <span class="hud-label">COINS</span>
-          <span id="scrap-val" class="hud-value gold-text">🪙 0</span>
-        </div>
+        <div class="hud-right-placeholder"></div>
       </div>
 
       <div class="hud-bottom">
