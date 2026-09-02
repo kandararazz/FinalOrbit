@@ -30,7 +30,7 @@ export function getWaveData(waveNum) {
 
   const enemyCount = isBossWave 
     ? 1 + Math.floor(waveNum / 10) * 2
-    : Math.min(60, 8 + Math.floor(waveNum * 1.4));
+    : Math.min(60, 9 + Math.floor(waveNum * 1.5));
 
   const spawnRate = isSwarmWave 
     ? 25 
@@ -40,7 +40,7 @@ export function getWaveData(waveNum) {
 
   let enemyTypes = ['stinger'];
   if (waveNum >= 5) enemyTypes.push('scout');
-  if (waveNum >= 12) enemyTypes.push('dreadnought');
+  if (waveNum >= 12) enemyTypes.push('cruiser');
 
   return {
     wave: waveNum,
@@ -51,7 +51,7 @@ export function getWaveData(waveNum) {
     obstacleInterval,
     types: enemyTypes,
     hpMultiplier: 1 + (waveNum * 0.08),
-    speedMultiplier: Math.min(2.0, 1 + (waveNum * 0.015))
+    speedMultiplier: Math.min(1.5, 1 + (waveNum * 0.008))
   };
 }
 
@@ -570,14 +570,20 @@ export class Game {
     if (waveInfo.isBossWave) {
       this.waveEnemiesToSpawn.push({ type: 'boss', delay: 40 });
       for (let b = 0; b < Math.floor(waveNum / 10); b++) {
-        this.waveEnemiesToSpawn.push({ type: 'scout', delay: 100 + b * 60 });
+        this.waveEnemiesToSpawn.push({ type: 'scout', delay: 100 + b * 60, offsetX: (b % 2 === 0 ? -60 : 60) });
       }
     } else {
       const count = waveInfo.totalEnemies;
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count; i += 3) {
         const typeIndex = Math.floor(Math.random() * waveInfo.types.length);
         const enemyType = waveInfo.types[typeIndex];
-        this.waveEnemiesToSpawn.push({ type: enemyType, delay: i * waveInfo.spawnRate });
+        const groupDelay = (i / 3) * waveInfo.spawnRate;
+        const groupBaseX = Math.random() * (this.canvas.width - 200) + 100;
+        
+        // 3 Attackers coming together in a synchronized trio squad formation!
+        this.waveEnemiesToSpawn.push({ type: enemyType, delay: groupDelay, baseX: groupBaseX, offsetX: -55 });
+        this.waveEnemiesToSpawn.push({ type: enemyType, delay: groupDelay + 8, baseX: groupBaseX, offsetX: 0 });
+        this.waveEnemiesToSpawn.push({ type: enemyType, delay: groupDelay + 16, baseX: groupBaseX, offsetX: 55 });
       }
     }
   }
@@ -989,7 +995,9 @@ export class Game {
       for (let i = this.waveEnemiesToSpawn.length - 1; i >= 0; i--) {
         const item = this.waveEnemiesToSpawn[i];
         if (this.spawnTimer >= item.delay) {
-          const spawnX = Math.random() * (this.canvas.width - 100) + 50;
+          const baseX = item.baseX !== undefined ? item.baseX : (Math.random() * (this.canvas.width - 160) + 80);
+          const offsetX = item.offsetX || 0;
+          const spawnX = Math.max(30, Math.min(this.canvas.width - 30, baseX + offsetX));
           const isGlitch = Math.random() < 0.15;
           this.enemies.push(new Enemy(spawnX, -40, item.type, this.wave, isGlitch));
           this.waveEnemiesToSpawn.splice(i, 1);

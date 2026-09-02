@@ -19,12 +19,12 @@ export class Enemy {
 
     switch (this.type) {
       case 'stinger':
-        // Kamikaze Stinger: Dark red, triangular drone, triple speed!
+        // Kamikaze Stinger: Dark red, triangular drone, fast interceptor!
         this.width = 22;
         this.height = 26;
         this.maxHealth = 10 + wave * 2;
         this.scoreValue = 100;
-        this.speedY = 8.5; // Triple speed!
+        this.speedY = 5.5; // Moderated speed for tactical dodge!
         this.color = '#aa0022';
         this.shootInterval = 9999;
         this.aligned = false;
@@ -36,7 +36,7 @@ export class Enemy {
         this.height = 30;
         this.maxHealth = 35 + wave * 6;
         this.scoreValue = 200;
-        this.speedY = 1.2;
+        this.speedY = 1.1;
         this.color = '#00ff66';
         this.shootInterval = 9999;
         break;
@@ -46,7 +46,7 @@ export class Enemy {
         this.height = 36;
         this.maxHealth = 24 + wave * 5;
         this.scoreValue = 120;
-        this.speedY = 3.0;
+        this.speedY = 2.4;
         this.color = '#00f0ff';
         this.shootInterval = Math.max(50, 100 - wave * 4);
         this.isDiveBombing = false;
@@ -57,7 +57,7 @@ export class Enemy {
         this.height = 24;
         this.maxHealth = 12 + wave * 3;
         this.scoreValue = 90;
-        this.speedY = 4.2;
+        this.speedY = 3.2;
         this.color = '#ff0055';
         this.shootInterval = 9999;
         break;
@@ -67,7 +67,7 @@ export class Enemy {
         this.height = 48;
         this.maxHealth = 90 + wave * 18;
         this.scoreValue = 400;
-        this.speedY = 1.2;
+        this.speedY = 1.0;
         this.color = '#0088ff';
         this.shootInterval = Math.max(70, 130 - wave * 4);
         this.hasFrontShield = true;
@@ -78,7 +78,7 @@ export class Enemy {
         this.height = 54;
         this.maxHealth = 85 + wave * 15;
         this.scoreValue = 350;
-        this.speedY = 1.0;
+        this.speedY = 0.9;
         this.color = '#ffea00';
         this.shootInterval = Math.max(75, 140 - wave * 5);
         break;
@@ -88,7 +88,7 @@ export class Enemy {
         this.height = 100;
         this.maxHealth = 500 + wave * 50;
         this.scoreValue = 3000;
-        this.speedY = 0.6;
+        this.speedY = 0.5;
         this.color = '#ff0055';
         this.shootInterval = Math.max(15, 30 - Math.floor(wave / 5));
         this.bossTargetY = 110;
@@ -104,7 +104,7 @@ export class Enemy {
         this.height = 38;
         this.maxHealth = 30 + wave * 6;
         this.scoreValue = 180;
-        this.speedY = 1.5;
+        this.speedY = 1.3;
         this.color = '#39ff14';
         this.shootInterval = Math.max(50, 100 - wave * 3);
         break;
@@ -115,7 +115,7 @@ export class Enemy {
         this.height = 32;
         this.maxHealth = 18 + wave * 3;
         this.scoreValue = 60;
-        this.speedY = 1.8;
+        this.speedY = 1.5;
         this.color = '#00ff66';
         this.shootInterval = Math.max(65, 140 - wave * 4);
         break;
