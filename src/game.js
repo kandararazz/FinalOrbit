@@ -5,7 +5,7 @@ import { Enemy } from './enemy.js';
 import { Bullet } from './bullet.js';
 import { ParticleSystem } from './particles.js';
 import { PowerUp } from './powerup.js';
-import { Asteroid, BlackHole, NebulaCloud, SweepingLaserGrid } from './hazards.js';
+import { Asteroid, EnergySpikeMine, BlackHole, NebulaCloud, SweepingLaserGrid } from './hazards.js';
 import { soundManager } from './audio.js';
 import { HUDManager } from './hud.js';
 import { ShopManager } from './shop.js';
@@ -382,9 +382,15 @@ export class Game {
       this.hazards.push(new SweepingLaserGrid(this.canvas.width, Math.random() * (this.canvas.width - 200) + 100));
     }
 
-    if (Math.random() < 0.45) {
-      for (let i = 0; i < Math.min(6, 2 + Math.floor(waveNum / 8)); i++) {
-        this.hazards.push(new Asteroid(Math.random() * (this.canvas.width - 80) + 40, -40 - i * 50));
+    if (Math.random() < 0.65) {
+      for (let i = 0; i < Math.min(6, 2 + Math.floor(waveNum / 6)); i++) {
+        const hx = Math.random() * (this.canvas.width - 80) + 40;
+        const hy = -40 - i * 55;
+        if (Math.random() < 0.5) {
+          this.hazards.push(new Asteroid(hx, hy));
+        } else {
+          this.hazards.push(new EnergySpikeMine(hx, hy));
+        }
       }
     }
 
@@ -554,12 +560,20 @@ export class Game {
 
         for (let hIdx = this.hazards.length - 1; hIdx >= 0; hIdx--) {
           const hz = this.hazards[hIdx];
-          if (hz instanceof Asteroid && hz.active) {
+          if ((hz instanceof Asteroid || hz instanceof EnergySpikeMine) && hz.active) {
             if (this.rectIntersect(bullet.getBounds(), hz.getBounds())) {
               if (!bullet.piercing) bullet.active = false;
               const destroyed = hz.takeDamage(bullet.damage);
               if (destroyed) {
-                this.particleSystem.createExplosion(hz.x, hz.y, 15, '#8c6d58');
+                const points = hz.scoreValue || 25;
+                this.score += points;
+                this.hud.updateScore(this.score);
+                const explColor = hz instanceof EnergySpikeMine ? '#ff3300' : '#8c6d58';
+                this.particleSystem.createExplosion(hz.x, hz.y, 25, explColor, 1.2);
+                this.particleSystem.addFloatingText(hz.x, hz.y, `+${points}`, '#ffea00');
+                soundManager.playExplosion();
+              } else {
+                this.particleSystem.createSparks(bullet.x, bullet.y, '#ffea00', 4);
               }
             }
           }
@@ -587,17 +601,23 @@ export class Game {
       }
     }
 
-    // Player vs Terrain / Asteroid Obstacle Collision (70% Forgiving Hitbox)
+    // Player vs Sharp Hazard Obstacles (Jagged Asteroids & Energy Spike Mines)
     for (let hIdx = this.hazards.length - 1; hIdx >= 0; hIdx--) {
       const hz = this.hazards[hIdx];
-      if (hz instanceof Asteroid && hz.active) {
+      if ((hz instanceof Asteroid || hz instanceof EnergySpikeMine) && hz.active) {
         if (this.rectIntersect(playerBounds, hz.getBounds())) {
           const result = this.player.takeObstacleImpact();
-          if (result === 'OBSTACLE_SHIELD_SHATTER') {
+          if (result === 'OBSTACLE_SHIELD_SHATTER' || result === 'OBSTACLE_HULL_HIT') {
             hz.active = false;
-            this.particleSystem.createExplosion(hz.x, hz.y, 30, '#00f0ff', 1.5);
-            this.particleSystem.addFloatingText(this.player.x, this.player.y, 'SHIELD SHATTERED! 1.5s I-FRAMES', '#00f0ff');
-            this.addScreenShake(18);
+            const explColor = hz instanceof EnergySpikeMine ? '#ff3300' : '#8c6d58';
+            this.particleSystem.createExplosion(hz.x, hz.y, 25, explColor, 1.3);
+            this.particleSystem.createSparks(this.player.x, this.player.y, '#ffea00', 15);
+            this.addScreenShake(12); // Quick 0.2s screen shake
+            soundManager.playHit();
+
+            const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-30% SHIELD' : '-35% HULL';
+            const textColor = result === 'OBSTACLE_SHIELD_SHATTER' ? '#00f0ff' : '#ff0055';
+            this.particleSystem.addFloatingText(this.player.x, this.player.y, textLabel, textColor);
           } else if (result === 'DESTROYED') {
             hz.active = false;
             this.handlePlayerGameOver();

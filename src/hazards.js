@@ -1,23 +1,26 @@
 // Environmental Hazards, Meteor Storms & Sweeping Laser Grids for FinalOrbit
 
+// Environmental Hazards, Meteor Storms & Sharp Obstacles for FinalOrbit
+
 export class Asteroid {
-  constructor(x, y, radius = 28) {
+  constructor(x, y, radius = 26) {
     this.x = x;
     this.y = y;
     this.radius = radius;
-    this.vy = Math.random() * 1.8 + 1.2;
-    this.vx = (Math.random() - 0.5) * 0.8;
+    this.vy = Math.random() * 1.5 + 1.5; // Slow downward drift 1.5-3px/frame
+    this.vx = (Math.random() - 0.5) * 0.6;
     this.rot = Math.random() * Math.PI * 2;
-    this.rotSpeed = (Math.random() - 0.5) * 0.04;
-    this.health = Math.floor(radius * 1.5);
-    this.maxHealth = this.health;
+    this.rotSpeed = (Math.random() > 0.5 ? 1 : -1) * 0.02; // 0.02 rad/frame continuous rotation
+    this.health = 3; // 3 HP
+    this.maxHealth = 3;
+    this.scoreValue = 25;
     this.active = true;
 
     this.vertices = [];
-    const count = 7;
+    const count = 9; // Jagged sharp pointed edges
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2;
-      const offset = (Math.random() * 0.4 + 0.8) * this.radius;
+      const offset = (i % 2 === 0 ? 1.0 : 0.45) * (Math.random() * 0.2 + 0.85) * this.radius;
       this.vertices.push({
         x: Math.cos(angle) * offset,
         y: Math.sin(angle) * offset
@@ -49,9 +52,10 @@ export class Asteroid {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
 
-    ctx.fillStyle = '#4a3b32';
+    // Dark grey/brown jagged rocks with sharp pointed edges
+    ctx.fillStyle = '#3a322c';
     ctx.strokeStyle = '#8c6d58';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
 
     ctx.beginPath();
     this.vertices.forEach((v, idx) => {
@@ -61,6 +65,104 @@ export class Asteroid {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+
+    // Sharp highlights
+    ctx.strokeStyle = '#bfa088';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+    ctx.lineTo(this.vertices[2].x, this.vertices[2].y);
+    ctx.lineTo(this.vertices[4].x, this.vertices[4].y);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  getBounds() {
+    return {
+      x: this.x - this.radius,
+      y: this.y - this.radius,
+      width: this.radius * 2,
+      height: this.radius * 2
+    };
+  }
+}
+
+export class EnergySpikeMine {
+  constructor(x, y, radius = 24) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.vy = Math.random() * 1.5 + 1.5; // Slow downward drift 1.5-3px/frame
+    this.vx = (Math.random() - 0.5) * 0.6;
+    this.rot = Math.random() * Math.PI * 2;
+    this.rotSpeed = 0.03; // 0.03 rad/frame continuous rotation
+    this.health = 2; // 2 HP
+    this.maxHealth = 2;
+    this.scoreValue = 25;
+    this.active = true;
+    this.spikeCount = 8;
+  }
+
+  takeDamage(amount) {
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.active = false;
+      return true;
+    }
+    return false;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.rot += this.rotSpeed;
+  }
+
+  isOutOfBounds(height) {
+    return this.y > height + 60;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+
+    // Red-orange spiked metal mines with spinning razor blades
+    ctx.fillStyle = '#ff2200';
+    ctx.strokeStyle = '#ff7700';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#ff3300';
+
+    ctx.beginPath();
+    for (let i = 0; i < this.spikeCount; i++) {
+      const angle = (i / this.spikeCount) * Math.PI * 2;
+      const innerAngle = angle + Math.PI / this.spikeCount;
+      const outerR = this.radius;
+      const innerR = this.radius * 0.45;
+
+      const ox = Math.cos(angle) * outerR;
+      const oy = Math.sin(angle) * outerR;
+      const ix = Math.cos(innerAngle) * innerR;
+      const iy = Math.sin(innerAngle) * innerR;
+
+      if (i === 0) ctx.moveTo(ox, oy);
+      else ctx.lineTo(ox, oy);
+      ctx.lineTo(ix, iy);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Pulsing Bright Core
+    const pulse = Math.sin(Date.now() * 0.01) * 2;
+    ctx.fillStyle = '#ffea00';
+    ctx.shadowColor = '#ffea00';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(0, 0, Math.max(1, 8 + pulse), 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }

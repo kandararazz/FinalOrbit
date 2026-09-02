@@ -193,18 +193,26 @@ export class Player {
     if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0) return false;
 
     this.shieldRechargeDelay = this.baseRechargeDelayMax;
+    this.overchargeInvulnerableTimer = 60; // 1.0s invincibility frames (i-frames) with flashing ship sprite
+    this.vy += 4.5; // Slight knockback
+
+    soundManager.playHit();
+    if ('vibrate' in navigator) navigator.vibrate([30]);
 
     if (this.shield > 0) {
-      // Direct Collision with Shield > 0 -> Shatter shield to 0%, grant 1.5s i-frames, blue shockwave!
-      this.shield = 0;
-      this.overchargeInvulnerableTimer = 90; // 1.5s i-frames
-      soundManager.playEmp();
+      // Deduct 30% from Shield bar and shatter obstacle
+      const shieldDmg = this.maxShield * 0.30;
+      this.shield = Math.max(0, this.shield - shieldDmg);
       return 'OBSTACLE_SHIELD_SHATTER';
     } else {
-      // Direct Collision with Shield = 0 -> Hull immediately drops to 0% and ship destroyed!
-      this.health = 0;
-      soundManager.playHit();
-      return 'DESTROYED';
+      // Deduct 35% directly from Hull health
+      const hullDmg = this.maxHealth * 0.35;
+      this.health -= hullDmg;
+      if (this.health <= 0) {
+        this.health = 0;
+        return 'DESTROYED';
+      }
+      return 'OBSTACLE_HULL_HIT';
     }
   }
 
