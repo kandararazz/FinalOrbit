@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bind Restart Buttons
+  // Bind Restart & Return to Home Buttons
   const restartPauseBtn = document.getElementById('restart-pause-btn');
   if (restartPauseBtn) {
     restartPauseBtn.addEventListener('click', () => {
@@ -56,6 +56,13 @@ window.addEventListener('DOMContentLoaded', () => {
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
       game.startNewGame();
+    });
+  }
+
+  const gameOverHomeBtn = document.getElementById('game-over-home-btn');
+  if (gameOverHomeBtn) {
+    gameOverHomeBtn.addEventListener('click', () => {
+      game.returnToHome();
     });
   }
 
@@ -73,8 +80,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   if (gameOverShopBtn && shopScreen) {
     gameOverShopBtn.addEventListener('click', () => {
-      game.shop.updateUI();
-      shopScreen.classList.remove('hidden');
+      game.returnToHome();
     });
   }
   if (shopCloseBtn && shopScreen) {
@@ -118,7 +124,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // Fullscreen API Integration
-  const fullscreenToggleBtn = document.getElementById('fullscreen-toggle');
   function toggleFullscreen() {
     if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
       const docEl = document.documentElement;
@@ -140,6 +145,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  window.toggleFullscreenApp = toggleFullscreen;
+
+  const fullscreenToggleBtn = document.getElementById('fullscreen-toggle');
   if (fullscreenToggleBtn) {
     fullscreenToggleBtn.addEventListener('click', toggleFullscreen);
   }
@@ -169,6 +177,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+  });
 
   // Run render loop
   game.run();

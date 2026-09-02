@@ -52,9 +52,9 @@ export class Asteroid {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
 
-    // Dark grey/brown jagged rocks with sharp pointed edges
-    ctx.fillStyle = '#3a322c';
-    ctx.strokeStyle = '#8c6d58';
+    // Dark graphite grey multi-sided jagged polygon (8-10 uneven sharp vertices)
+    ctx.fillStyle = '#22262c';
+    ctx.strokeStyle = '#444d5a';
     ctx.lineWidth = 2.5;
 
     ctx.beginPath();
@@ -66,14 +66,24 @@ export class Asteroid {
     ctx.fill();
     ctx.stroke();
 
-    // Sharp highlights
-    ctx.strokeStyle = '#bfa088';
-    ctx.lineWidth = 1;
+    // Glowing orange magma cracks running through body
+    ctx.strokeStyle = '#ff6600';
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
-    ctx.lineTo(this.vertices[2].x, this.vertices[2].y);
-    ctx.lineTo(this.vertices[4].x, this.vertices[4].y);
+    if (this.vertices.length >= 6) {
+      ctx.moveTo(this.vertices[0].x * 0.75, this.vertices[0].y * 0.75);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(this.vertices[3].x * 0.75, this.vertices[3].y * 0.75);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(this.vertices[6].x * 0.75, this.vertices[6].y * 0.75);
+    }
     ctx.stroke();
+
+    // Inner glowing magma core
+    ctx.fillStyle = '#ffea00';
+    ctx.beginPath();
+    ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
@@ -97,7 +107,7 @@ export class EnergySpikeMine {
     this.vx = (Math.random() - 0.5) * 0.6;
     this.rot = Math.random() * Math.PI * 2;
     this.rotSpeed = 0.03; // 0.03 rad/frame continuous rotation
-    this.health = 2; // 2 HP
+    this.health = 2;
     this.maxHealth = 2;
     this.scoreValue = 25;
     this.active = true;
@@ -128,19 +138,17 @@ export class EnergySpikeMine {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
 
-    // Red-orange spiked metal mines with spinning razor blades
-    ctx.fillStyle = '#ff2200';
-    ctx.strokeStyle = '#ff7700';
+    // Dark steel sphere covered in 8 razor-sharp protruding spikes
+    ctx.fillStyle = '#2b323d';
+    ctx.strokeStyle = '#444d5a';
     ctx.lineWidth = 2;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#ff3300';
 
     ctx.beginPath();
     for (let i = 0; i < this.spikeCount; i++) {
       const angle = (i / this.spikeCount) * Math.PI * 2;
-      const innerAngle = angle + Math.PI / this.spikeCount;
-      const outerR = this.radius;
-      const innerR = this.radius * 0.45;
+      const innerAngle = angle + Math.PI / (this.spikeCount * 2);
+      const outerR = this.radius * 1.15;
+      const innerR = this.radius * 0.5;
 
       const ox = Math.cos(angle) * outerR;
       const oy = Math.sin(angle) * outerR;
@@ -155,14 +163,30 @@ export class EnergySpikeMine {
     ctx.fill();
     ctx.stroke();
 
-    // Pulsing Bright Core
-    const pulse = Math.sin(Date.now() * 0.01) * 2;
-    ctx.fillStyle = '#ffea00';
-    ctx.shadowColor = '#ffea00';
-    ctx.shadowBlur = 8;
+    // Dark Steel Inner Body
+    ctx.fillStyle = '#1c222b';
     ctx.beginPath();
-    ctx.arc(0, 0, Math.max(1, 8 + pulse), 0, Math.PI * 2);
+    ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#ff0033';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Ominous Red Center LED that blinks faster as it approaches the bottom!
+    const blinkSpeed = 0.02 + (this.y / 600) * 0.08;
+    const isBlinking = Math.floor(Date.now() * blinkSpeed) % 2 === 0;
+
+    ctx.fillStyle = isBlinking ? '#ff0033' : '#660011';
+    ctx.beginPath();
+    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (isBlinking) {
+      ctx.fillStyle = '#ff6688';
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
   }
@@ -199,8 +223,6 @@ export class SweepingLaserGrid {
     ctx.save();
     ctx.strokeStyle = '#ff0055';
     ctx.lineWidth = 6;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = '#ff0055';
 
     // Left beam segment
     ctx.beginPath();
@@ -273,8 +295,6 @@ export class BlackHole {
     ctx.fillStyle = '#000000';
     ctx.strokeStyle = '#a000ff';
     ctx.lineWidth = 3;
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#a000ff';
 
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);

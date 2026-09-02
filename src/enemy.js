@@ -161,43 +161,46 @@ export class Enemy {
     this.animTimer += 0.05;
     if (this.flashTimer > 0) this.flashTimer--;
 
-    if (this.type === 'stinger') {
-      // Align horizontally with player, then thrust downward at triple speed!
-      if (!this.aligned) {
-        this.x += (playerX - this.x) * 0.15;
-        this.y += 1.5;
-        if (Math.abs(playerX - this.x) < 15) this.aligned = true;
-      } else {
-        this.y += this.speedY; // Triple speed thrust!
-      }
-    } else if (this.type === 'anchor') {
-      this.y += this.speedY;
-      // Tether invulnerability beam to nearest enemy
-      if (!this.tetherTarget || !this.tetherTarget.active) {
-        this.tetherTarget = allEnemies.find(e => e !== this && e.active && e.type !== 'boss');
-      }
-    } else if (this.type === 'scout') {
-      const distToPlayer = Math.hypot(playerX - this.x, playerY - this.y);
+    const distToPlayer = Math.hypot(playerX - this.x, playerY - this.y);
+
+    if (this.type === 'stinger' || this.type === 'scout') {
+      // Dive-Bombers: Trigger quick diagonal dive directly toward player when within 250px!
       if (distToPlayer < 250 || this.isDiveBombing) {
         this.isDiveBombing = true;
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const angle = Math.atan2(dy, dx);
-        this.x += Math.cos(angle) * 3.8 + Math.sin(this.animTimer * 4) * 2;
-        this.y += Math.sin(angle) * 3.8;
+        this.x += Math.cos(angle) * 5.5 + Math.sin(this.animTimer * 4) * 1.5;
+        this.y += Math.sin(angle) * 5.5;
       } else {
+        // S-Curve Weaver approach
         this.y += this.speedY;
-        this.x = this.startX + Math.sin(this.animTimer * 2) * 85;
+        this.x = this.startX + Math.sin(this.animTimer * 2.5) * 65;
       }
+    } else if (this.type === 'cruiser' || this.type === 'shield_bearer') {
+      // Flank & Strafe: Move to upper third of canvas, match player's horizontal X position, then swoop
+      if (this.y < height * 0.35) {
+        this.y += this.speedY;
+        this.x += (playerX - this.x) * 0.06;
+      } else {
+        this.y += this.speedY * 1.2;
+        this.x = this.startX + Math.cos(this.animTimer * 1.8) * 80;
+      }
+    } else if (this.type === 'acid_spitter' || this.type === 'drone') {
+      // S-Curve Weavers: Oscillate horizontally across a sine-wave path
+      this.y += this.speedY;
+      this.x = this.startX + Math.sin(this.animTimer * 2.2) * 55;
     } else if (this.type === 'swarmer') {
       const dx = playerX - this.x;
       const dy = playerY - this.y;
       const dist = Math.hypot(dx, dy) || 1;
-      this.x += (dx / dist) * this.speedY;
+      this.x += (dx / dist) * this.speedY + Math.sin(this.animTimer * 3) * 2;
       this.y += (dy / dist) * this.speedY;
-    } else if (this.type === 'cruiser' || this.type === 'shield_bearer') {
+    } else if (this.type === 'anchor') {
       this.y += this.speedY;
-      this.x = this.startX + Math.cos(this.animTimer) * 35;
+      if (!this.tetherTarget || !this.tetherTarget.active) {
+        this.tetherTarget = allEnemies.find(e => e !== this && e.active && e.type !== 'boss');
+      }
     } else if (this.type === 'boss') {
       if (this.y < this.bossTargetY) {
         this.y += this.speedY;
@@ -228,21 +231,20 @@ export class Enemy {
     const bullets = [];
 
     if (this.type === 'drone') {
-      bullets.push(new Bullet(this.x, this.y + this.height / 2, 0, 4.5, true));
-    } else if (this.type === 'acid_spitter') {
+      bullets.push(new Bullet(this.x, this.y + this.height / 2, 0, 4.5, true, 'cyan_needle'));
+    } else if (this.type === 'acid_spitter' || this.type === 'stinger') {
       const dx = playerX - this.x;
       const dy = playerY - this.y;
       const dist = Math.hypot(dx, dy) || 1;
       const speed = 4.8 + Math.min(3.0, this.wave * 0.06);
       bullets.push(new Bullet(this.x, this.y + this.height / 2, (dx / dist) * speed, (dy / dist) * speed, true, 'acid'));
     } else if (this.type === 'scout') {
-      const dx = playerX - this.x;
-      const dy = playerY - this.y;
-      const dist = Math.hypot(dx, dy) || 1;
-      bullets.push(new Bullet(this.x, this.y + this.height / 2, (dx / dist) * 5, (dy / dist) * 5, true));
+      bullets.push(new Bullet(this.x, this.y + this.height / 2, 0, 5.5, true, 'cyan_needle'));
     } else if (this.type === 'cruiser' || this.type === 'shield_bearer') {
-      bullets.push(new Bullet(this.x - 16, this.y + this.height / 2, 0, 4.8, true));
-      bullets.push(new Bullet(this.x + 16, this.y + this.height / 2, 0, 4.8, true));
+      // Heavy Dreadnought 3-way spread shots
+      bullets.push(new Bullet(this.x - 18, this.y + this.height / 2, -1.8, 4.8, true, 'spread'));
+      bullets.push(new Bullet(this.x, this.y + this.height / 2, 0, 5.2, true, 'spread'));
+      bullets.push(new Bullet(this.x + 18, this.y + this.height / 2, 1.8, 4.8, true, 'spread'));
     } else if (this.type === 'boss') {
       const count = 8;
       const speed = 4.5;
@@ -271,8 +273,6 @@ export class Enemy {
       ctx.save();
       ctx.strokeStyle = '#00ff66';
       ctx.lineWidth = 3;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = '#00ff66';
       ctx.beginPath();
       ctx.moveTo(this.x, this.y);
       ctx.lineTo(this.tetherTarget.x, this.tetherTarget.y);
@@ -284,84 +284,113 @@ export class Enemy {
 
     if (this.flashTimer > 0) {
       ctx.fillStyle = '#ffffff';
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = '#ffffff';
     } else {
       ctx.fillStyle = this.color;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = this.color;
     }
 
     const halfW = this.width / 2;
     const halfH = this.height / 2;
 
-    if (this.type === 'acid_spitter') {
-      // Bio-Carapace Beetle Hull with Toxic Slime Core
-      ctx.fillStyle = '#051808';
+    if (this.type === 'acid_spitter' || this.type === 'stinger') {
+      // Acid Stinger: Dark green chitin body, sharp forward mandibles, glowing lime outline, pulsing venom sac
+      ctx.fillStyle = '#0b260e';
       ctx.strokeStyle = '#39ff14';
       ctx.lineWidth = 2.2;
-      ctx.shadowBlur = 16;
-      ctx.shadowColor = '#00ff66';
 
       ctx.beginPath();
-      ctx.moveTo(0, 18);
-      ctx.lineTo(-12, 6);
-      ctx.lineTo(-18, -4);
-      ctx.lineTo(-14, -14);
-      ctx.lineTo(-4, -8);
-      ctx.lineTo(0, -12);
-      ctx.lineTo(4, -8);
-      ctx.lineTo(14, -14);
-      ctx.lineTo(18, -4);
-      ctx.lineTo(12, 6);
+      ctx.moveTo(0, halfH + 4); // Forward stinger tip
+      ctx.lineTo(-halfW * 0.4, 4);
+      ctx.lineTo(-halfW, -halfH * 0.2);
+      ctx.lineTo(-halfW * 0.8, -halfH);
+      ctx.lineTo(0, -halfH * 0.5);
+      ctx.lineTo(halfW * 0.8, -halfH);
+      ctx.lineTo(halfW, -halfH * 0.2);
+      ctx.lineTo(halfW * 0.4, 4);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
-      // Pulsing Acid Sac in center
-      const pulse = Math.sin(Date.now() * 0.009) * 2;
+      // Sharp forward mandibles
+      ctx.strokeStyle = '#eaff00';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-6, halfH - 2);
+      ctx.lineTo(-10, halfH + 8);
+      ctx.moveTo(6, halfH - 2);
+      ctx.lineTo(10, halfH + 8);
+      ctx.stroke();
+
+      // Pulsing Yellow-Green Venom Sac
+      const pulse = Math.sin(Date.now() * 0.012) * 2;
       ctx.fillStyle = '#39ff14';
-      ctx.shadowColor = '#eaff00';
-      ctx.shadowBlur = 10;
       ctx.beginPath();
-      ctx.ellipse(0, 0, Math.max(1, 4 + pulse), Math.max(1, 6 + pulse), 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -halfH * 0.3, Math.max(1, 5 + pulse), Math.max(1, 7 + pulse), 0, 0, Math.PI * 2);
       ctx.fill();
-    } else if (this.type === 'stinger') {
-      // Dark red triangular drone
+    } else if (this.type === 'scout' || this.type === 'drone') {
+      // Scout Drone: Fast, compact neon-cyan inverted diamond with flickering dual wing-thrusters
+      ctx.fillStyle = '#031926';
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.2;
+
       ctx.beginPath();
-      ctx.moveTo(0, halfH);
-      ctx.lineTo(-halfW, -halfH);
-      ctx.lineTo(halfW, -halfH);
+      ctx.moveTo(0, halfH + 4);
+      ctx.lineTo(-halfW, 0);
+      ctx.lineTo(0, -halfH);
+      ctx.lineTo(halfW, 0);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+
+      // Inner cyan core
+      ctx.fillStyle = '#00f0ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flickering dual wing-thrusters
+      const flicker = Math.random() * 6;
+      ctx.fillStyle = '#00f0ff';
+      ctx.beginPath();
+      ctx.arc(-halfW + 2, -halfH * 0.4 - flicker, 3, 0, Math.PI * 2);
+      ctx.arc(halfW - 2, -halfH * 0.4 - flicker, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'cruiser' || this.type === 'shield_bearer') {
+      // Heavy Dreadnought: Hexagonal dark-grey armor plating with twin red gun pods & exposed power core
+      ctx.fillStyle = '#1a1f29';
+      ctx.strokeStyle = '#45536b';
+      ctx.lineWidth = 2.5;
+
+      ctx.beginPath();
+      ctx.moveTo(0, halfH);
+      ctx.lineTo(-halfW, halfH * 0.4);
+      ctx.lineTo(-halfW, -halfH * 0.6);
+      ctx.lineTo(-halfW * 0.5, -halfH);
+      ctx.lineTo(halfW * 0.5, -halfH);
+      ctx.lineTo(halfW, -halfH * 0.6);
+      ctx.lineTo(halfW, halfH * 0.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Twin Red Gun Pods on sides
+      ctx.fillStyle = '#ff0055';
+      ctx.fillRect(-halfW - 4, -halfH * 0.2, 6, 18);
+      ctx.fillRect(halfW - 2, -halfH * 0.2, 6, 18);
+
+      // Exposed Glowing Core in Center
+      const corePulse = Math.sin(Date.now() * 0.008) * 3;
+      ctx.fillStyle = '#ffea00';
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(1, 8 + corePulse), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ff0055';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     } else if (this.type === 'anchor') {
       // Green Hexagonal Anchor Drone
       ctx.beginPath();
       ctx.arc(0, 0, halfW, 0, Math.PI * 2);
       ctx.fill();
-    } else if (this.type === 'scout') {
-      ctx.beginPath();
-      ctx.moveTo(0, halfH);
-      ctx.lineTo(-halfW, -halfH);
-      ctx.lineTo(0, -halfH / 2);
-      ctx.lineTo(halfW, -halfH);
-      ctx.closePath();
-      ctx.fill();
-    } else if (this.type === 'shield_bearer') {
-      ctx.beginPath();
-      ctx.moveTo(0, halfH * 0.5);
-      ctx.lineTo(-halfW, -halfH);
-      ctx.lineTo(halfW, -halfH);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.strokeStyle = '#00f0ff';
-      ctx.lineWidth = 4;
-      ctx.shadowBlur = 15;
-      ctx.shadowColor = '#00f0ff';
-      ctx.beginPath();
-      ctx.arc(0, halfH + 4, halfW * 0.9, 0.2, Math.PI - 0.2);
-      ctx.stroke();
     } else if (this.type === 'boss') {
       ctx.beginPath();
       ctx.moveTo(0, halfH);
@@ -375,8 +404,6 @@ export class Enemy {
       this.turrets.forEach(t => {
         if (t.active) {
           ctx.fillStyle = '#ffea00';
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = '#ffea00';
           ctx.beginPath();
           ctx.arc(t.xOffset, t.yOffset, 12, 0, Math.PI * 2);
           ctx.fill();
@@ -384,8 +411,6 @@ export class Enemy {
       });
 
       ctx.fillStyle = '#ff0055';
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = '#ff0055';
       ctx.beginPath();
       ctx.arc(0, 0, 18, 0, Math.PI * 2);
       ctx.fill();

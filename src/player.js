@@ -4,11 +4,16 @@ import { MagnetDrone } from './drone.js';
 import { soundManager } from './audio.js';
 
 export const SHIP_AVATARS = {
-  apex_viper: { name: 'Viper', color: '#00f0ff', accent: '#ffffff', shape: 'viper' },
-  venom_phantom: { name: 'Venom Phantom', color: '#39ff14', accent: '#eaff00', shape: 'venom' },
-  crimson_apex: { name: 'Crimson Apex', color: '#ff0033', accent: '#ffea00', shape: 'crimson' },
-  void_phantom: { name: 'Void Phantom', color: '#a000ff', accent: '#ff0077', shape: 'phantom' },
-  aegis_titan: { name: 'Aegis Titan', color: '#ff5500', accent: '#ffea00', shape: 'titan' }
+  viper: { name: 'Viper', color: '#00f0ff', accent: '#ffffff', shape: 'viper', laserColor: '#00f0ff' },
+  apex_viper: { name: 'Viper', color: '#00f0ff', accent: '#ffffff', shape: 'viper', laserColor: '#00f0ff' },
+  venom: { name: 'Venom Dart', color: '#39ff14', accent: '#eaff00', shape: 'venom', laserColor: '#39ff14' },
+  venom_dart: { name: 'Venom Dart', color: '#39ff14', accent: '#eaff00', shape: 'venom', laserColor: '#39ff14' },
+  venom_phantom: { name: 'Venom Dart', color: '#39ff14', accent: '#eaff00', shape: 'venom', laserColor: '#39ff14' },
+  crimson: { name: 'Crimson Titan', color: '#ff0055', accent: '#ffea00', shape: 'crimson', laserColor: '#ff0055' },
+  crimson_titan: { name: 'Crimson Titan', color: '#ff0055', accent: '#ffea00', shape: 'crimson', laserColor: '#ff0055' },
+  crimson_apex: { name: 'Crimson Titan', color: '#ff0055', accent: '#ffea00', shape: 'crimson', laserColor: '#ff0055' },
+  void_phantom: { name: 'Void Phantom', color: '#a000ff', accent: '#ff0077', shape: 'phantom', laserColor: '#a000ff' },
+  aegis_titan: { name: 'Aegis Titan', color: '#ff5500', accent: '#ffea00', shape: 'titan', laserColor: '#ff5500' }
 };
 
 export class Player {
@@ -18,6 +23,7 @@ export class Player {
 
     this.width = 44;
     this.height = 48;
+    this.radius = 20;
     this.x = canvasWidth / 2;
     this.y = canvasHeight - 100;
 
@@ -38,6 +44,8 @@ export class Player {
     this.baseRechargeDelayMax = 240; // 4 seconds base
 
     this.overchargeInvulnerableTimer = 0;
+    this.isInvulnerable = false;
+    this.invulnerableTimer = 0;
 
     this.dashCooldown = 0;
     this.dashTimer = 0;
@@ -53,15 +61,16 @@ export class Player {
     this.touchControlActive = false;
     this.targetTouchX = this.x;
     this.targetTouchY = this.y;
-    this.touchOffsetY = -40;
+    this.touchOffsetY = -45;
     this.lastTapTouch = 0;
 
     this.weapons = new WeaponSystem();
     this.drone = new MagnetDrone(this);
 
     this.globalMagnetTimer = 0;
-    this.barrierHits = 3;
+    this.barrierHits = 0;
     this.barrierAngle = 0;
+    this.hitFlashTimer = 0;
 
     this.bombs = 1;
     this.maxBombs = 3;
@@ -108,7 +117,7 @@ export class Player {
     this.equippedAvatar = shopUpgrades.avatar || 'apex_viper';
 
     this.weapons = new WeaponSystem();
-    this.barrierHits = 3;
+    this.barrierHits = 0;
     this.bombs = 1;
     this.dashCooldown = 0;
     this.dashTimer = 0;
@@ -116,6 +125,7 @@ export class Player {
     this.invertedTimer = 0;
     this.globalMagnetTimer = 0;
     this.overchargeInvulnerableTimer = 0;
+    this.hitFlashTimer = 0;
   }
 
   applyPerks(perks = {}) {
@@ -154,65 +164,81 @@ export class Player {
   }
 
   takeDamage(amount) {
-    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0) return false;
+    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0 || this.isInvulnerable) return false;
 
     this.shieldRechargeDelay = this.baseRechargeDelayMax;
+    this.hitFlashTimer = 6; // Flash ship sprite white/red for 100ms
+    this.isInvulnerable = true;
+    this.invulnerableTimer = 48; // 800ms i-frames at 60 FPS
 
     if (this.barrierHits > 0) {
       this.barrierHits--;
       soundManager.playHit();
+      if ('vibrate' in navigator) navigator.vibrate(15);
       if (this.barrierHits <= 0) return 'EMP_SHATTER';
-      return false;
+      return 'BARRIER_HIT';
     }
 
     if (this.shield > 0) {
       this.shield -= amount;
       if (this.shield <= 0) {
+        const overflow = Math.abs(this.shield);
         this.shield = 0;
-        this.overchargeInvulnerableTimer = 60; // 1.0s i-frames
+        this.health -= overflow;
         soundManager.playEmp();
+        if ('vibrate' in navigator) navigator.vibrate(15);
+        if (this.health <= 0) {
+          this.health = 0;
+          return 'DESTROYED';
+        }
         return 'SHIELD_OVERCHARGE_PULSE';
       }
     } else {
       this.health -= amount;
-      this.overchargeInvulnerableTimer = 60; // 1.0s i-frames on hull hit
     }
 
     soundManager.playHit();
-    if ('vibrate' in navigator) navigator.vibrate([20]);
+    if ('vibrate' in navigator) navigator.vibrate(15);
 
     if (this.health <= 0) {
       this.health = 0;
       return 'DESTROYED';
     }
 
-    return 'HULL_DAMAGED';
+    return 'HEALTH_DAMAGED';
   }
 
   takeObstacleImpact() {
-    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0) return false;
+    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0 || this.isInvulnerable) return false;
 
     this.shieldRechargeDelay = this.baseRechargeDelayMax;
-    this.overchargeInvulnerableTimer = 60; // 1.0s invincibility frames (i-frames) with flashing ship sprite
-    this.vy += 4.5; // Slight knockback
+    this.hitFlashTimer = 10;
+    this.isInvulnerable = true;
+    this.invulnerableTimer = 48; // Exactly 800ms i-frames window
+    this.vy += 3.5; // Knockback
 
     soundManager.playHit();
-    if ('vibrate' in navigator) navigator.vibrate([30]);
+    if ('vibrate' in navigator) navigator.vibrate(25);
 
     if (this.shield > 0) {
-      // Deduct 30% from Shield bar and shatter obstacle
-      const shieldDmg = this.maxShield * 0.30;
-      this.shield = Math.max(0, this.shield - shieldDmg);
-      return 'OBSTACLE_SHIELD_SHATTER';
-    } else {
-      // Deduct 35% directly from Hull health
-      const hullDmg = this.maxHealth * 0.35;
-      this.health -= hullDmg;
+      this.shield -= 25; // Deduct 25 from shield
+      if (this.shield < 0) {
+        const overflow = Math.abs(this.shield);
+        this.shield = 0;
+        this.health -= overflow;
+      }
       if (this.health <= 0) {
         this.health = 0;
         return 'DESTROYED';
       }
-      return 'OBSTACLE_HULL_HIT';
+      return 'OBSTACLE_SHIELD_SHATTER';
+    } else {
+      this.health -= 30; // Deduct 30 directly from hull
+      if (this.health <= 0) {
+        this.health = 0;
+        return 'DESTROYED';
+      }
+      return 'OBSTACLE_HEALTH_HIT';
     }
   }
 
@@ -259,6 +285,7 @@ export class Player {
     } else if (this.touchControlActive) {
       this.x += (this.targetTouchX - this.x) * 0.2;
       this.y += (this.targetTouchY + this.touchOffsetY - this.y) * 0.2;
+      this.targetBankAngle = (this.targetTouchX - this.x) * 0.05;
     } else {
       this.x += this.vx;
       this.y += this.vy;
@@ -276,6 +303,14 @@ export class Player {
     if (this.dashCooldown > 0) this.dashCooldown--;
     if (this.empCooldown > 0) this.empCooldown--;
     if (this.overchargeInvulnerableTimer > 0) this.overchargeInvulnerableTimer--;
+    if (this.hitFlashTimer > 0) this.hitFlashTimer--;
+
+    if (this.invulnerableTimer > 0) {
+      this.invulnerableTimer--;
+      if (this.invulnerableTimer <= 0) {
+        this.isInvulnerable = false;
+      }
+    }
 
     if (this.dashTimer > 0) {
       this.dashTimer--;
@@ -314,8 +349,6 @@ export class Player {
       ctx.save();
       ctx.globalAlpha = ghost.alpha * 0.5;
       ctx.fillStyle = avatar.color;
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = avatar.color;
       ctx.beginPath();
       ctx.arc(ghost.x, ghost.y, this.width / 2, 0, Math.PI * 2);
       ctx.fill();
@@ -328,9 +361,9 @@ export class Player {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.bankAngle);
 
-    // Flashing translucent effect during i-frames!
-    if (this.overchargeInvulnerableTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) {
-      ctx.globalAlpha = 0.4;
+    // Flashing translucent red effect during 800ms i-frames!
+    if ((this.isInvulnerable || this.overchargeInvulnerableTimer > 0) && Math.floor(Date.now() / 80) % 2 === 0) {
+      ctx.globalAlpha = 0.35;
     }
 
     const noseY = this.height / 2;
@@ -338,13 +371,9 @@ export class Player {
     particleSystem.createThrusterParticle(this.x - 8 + exhaustX, this.y + noseY);
     particleSystem.createThrusterParticle(this.x + 8 + exhaustX, this.y + noseY);
 
-    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0) {
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = avatar.color;
-      ctx.fillStyle = avatar.color;
+    if (this.hitFlashTimer > 0) {
+      ctx.fillStyle = Math.floor(Date.now() / 50) % 2 === 0 ? '#ffffff' : '#ff0033';
     } else {
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = avatar.color;
       ctx.fillStyle = avatar.color;
     }
 
@@ -429,8 +458,6 @@ export class Player {
         const by = Math.sin(angle) * (this.width * 0.85);
 
         ctx.fillStyle = '#00ff66';
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = '#00ff66';
         ctx.beginPath();
         ctx.arc(bx, by, 5, 0, Math.PI * 2);
         ctx.fill();

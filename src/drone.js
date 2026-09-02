@@ -46,16 +46,14 @@ export class MagnetDrone {
     ctx.translate(this.x, this.y);
 
     // Glowing Magnetic Field Aura
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(0, 0, 22, 0, Math.PI * 2);
     ctx.stroke();
 
     // Drone Hull
     ctx.fillStyle = '#00f0ff';
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#00f0ff';
     ctx.beginPath();
     ctx.arc(0, 0, 6, 0, Math.PI * 2);
     ctx.fill();

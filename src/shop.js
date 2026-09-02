@@ -2,10 +2,10 @@
 
 export class ShopManager {
   constructor() {
-    this.scrap = this.loadScrap(); // Coin Balance
+    this.scrap = this.loadCoins(); // Coin Balance
     this.wins = this.loadWins(); // Total Wins
     this.upgrades = this.loadUpgrades();
-    this.equippedAvatar = this.loadAvatar();
+    this.equippedAvatar = this.loadEquippedAvatar();
 
     this.costs = {
       armor: [100, 250, 500],
@@ -14,8 +14,13 @@ export class ShopManager {
     };
 
     this.avatarCosts = {
+      viper: 0,
       apex_viper: 0,
+      venom: 250,
+      venom_dart: 250,
       venom_phantom: 250,
+      crimson: 600,
+      crimson_titan: 600,
       crimson_apex: 600,
       void_phantom: 500,
       aegis_titan: 1000
@@ -47,17 +52,18 @@ export class ShopManager {
     this.saveWins();
   }
 
-  loadScrap() {
+  loadCoins() {
     try {
-      const saved = localStorage.getItem('spaceShooter_coins') || localStorage.getItem('final_orbit_scrap');
+      const saved = localStorage.getItem('playerCoins') || localStorage.getItem('spaceShooter_coins') || localStorage.getItem('final_orbit_scrap');
       return saved ? parseInt(saved, 10) : 0;
     } catch (e) {
       return 0;
     }
   }
 
-  saveScrap() {
+  saveCoins() {
     try {
+      localStorage.setItem('playerCoins', this.scrap.toString());
       localStorage.setItem('spaceShooter_coins', this.scrap.toString());
       localStorage.setItem('final_orbit_scrap', this.scrap.toString());
     } catch (e) {}
@@ -66,42 +72,72 @@ export class ShopManager {
 
   addScrap(amount) {
     this.scrap += amount;
-    this.saveScrap();
+  }
+
+  loadUnlockedAvatars() {
+    try {
+      const saved = localStorage.getItem('unlockedAvatars');
+      if (saved) return JSON.parse(saved);
+      const legacy = localStorage.getItem('final_orbit_upgrades');
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (parsed.purchasedAvatars) return parsed.purchasedAvatars;
+      }
+      return ['viper', 'apex_viper'];
+    } catch (e) {
+      return ['viper', 'apex_viper'];
+    }
+  }
+
+  saveUnlockedAvatars(unlocked) {
+    try {
+      localStorage.setItem('unlockedAvatars', JSON.stringify(unlocked));
+    } catch (e) {}
+  }
+
+  loadEquippedAvatar() {
+    try {
+      const saved = localStorage.getItem('equippedAvatar') || localStorage.getItem('spaceShooter_avatar');
+      return saved || 'viper';
+    } catch (e) {
+      return 'viper';
+    }
+  }
+
+  saveEquippedAvatar(avatarId) {
+    try {
+      localStorage.setItem('equippedAvatar', avatarId);
+      localStorage.setItem('spaceShooter_avatar', avatarId);
+    } catch (e) {}
   }
 
   loadUpgrades() {
     try {
       const saved = localStorage.getItem('final_orbit_upgrades');
-      return saved ? JSON.parse(saved) : { armor: 1, shieldRecovery: 1, magnet: 1, speed: 1, rate: 1, purchasedAvatars: ['apex_viper'], avatar: 'apex_viper' };
+      return saved ? JSON.parse(saved) : { armor: 1, shieldRecovery: 1, magnet: 1, speed: 1, rate: 1, purchasedAvatars: ['viper', 'apex_viper'], avatar: 'viper' };
     } catch (e) {
-      return { armor: 1, shieldRecovery: 1, magnet: 1, speed: 1, rate: 1, purchasedAvatars: ['apex_viper'], avatar: 'apex_viper' };
+      return { armor: 1, shieldRecovery: 1, magnet: 1, speed: 1, rate: 1, purchasedAvatars: ['viper', 'apex_viper'], avatar: 'viper' };
     }
   }
 
   saveUpgrades() {
     try {
-      localStorage.setItem('spaceShooter_avatar', this.equippedAvatar);
+      this.saveEquippedAvatar(this.equippedAvatar);
       localStorage.setItem('final_orbit_upgrades', JSON.stringify(this.upgrades));
     } catch (e) {}
     this.updateUI();
   }
 
-  loadAvatar() {
-    const saved = localStorage.getItem('spaceShooter_avatar');
-    if (saved) return saved;
-    return this.upgrades.avatar || 'apex_viper';
-  }
-
   buyUpgrade(type) {
     const currentLvl = this.upgrades[type] || 1;
-    if (currentLvl >= 3) return false; // Max tier for statutory upgrades
+    if (currentLvl >= 3) return false;
 
     const costList = this.costs[type] || [100, 200, 300];
     const cost = costList[currentLvl - 1];
     if (this.scrap >= cost) {
       this.scrap -= cost;
       this.upgrades[type] = currentLvl + 1;
-      this.saveScrap();
+      this.saveCoins();
       this.saveUpgrades();
       return true;
     }
@@ -109,26 +145,28 @@ export class ShopManager {
   }
 
   buyOrEquipAvatar(avatarId) {
-    if (!this.upgrades.purchasedAvatars) {
-      this.upgrades.purchasedAvatars = ['apex_viper'];
-    }
+    let unlocked = this.loadUnlockedAvatars();
 
-    if (this.upgrades.purchasedAvatars.includes(avatarId)) {
-      // Already owned -> Equip avatar!
-      this.upgrades.avatar = avatarId;
+    const isUnlocked = unlocked.includes(avatarId) ||
+      (avatarId.includes('viper') && unlocked.some(a => a.includes('viper'))) ||
+      (avatarId.includes('venom') && unlocked.some(a => a.includes('venom'))) ||
+      (avatarId.includes('crimson') && unlocked.some(a => a.includes('crimson')));
+
+    if (isUnlocked) {
       this.equippedAvatar = avatarId;
-      this.saveUpgrades();
+      this.saveEquippedAvatar(avatarId);
+      this.updateUI();
       return true;
     } else {
-      // Purchase avatar
       const cost = this.avatarCosts[avatarId] || 250;
       if (this.scrap >= cost) {
         this.scrap -= cost;
-        this.upgrades.purchasedAvatars.push(avatarId);
-        this.upgrades.avatar = avatarId;
+        this.saveCoins();
+        if (!unlocked.includes(avatarId)) unlocked.push(avatarId);
+        this.saveUnlockedAvatars(unlocked);
         this.equippedAvatar = avatarId;
-        this.saveScrap();
-        this.saveUpgrades();
+        this.saveEquippedAvatar(avatarId);
+        this.updateUI();
         return true;
       }
     }
@@ -143,7 +181,7 @@ export class ShopManager {
       }
     });
 
-    ['apex_viper', 'venom_phantom', 'crimson_apex', 'void_phantom', 'aegis_titan'].forEach(avatarId => {
+    ['viper', 'apex_viper', 'venom', 'venom_dart', 'venom_phantom', 'crimson', 'crimson_titan', 'crimson_apex', 'void_phantom', 'aegis_titan'].forEach(avatarId => {
       const btn = document.getElementById(`select-avatar-${avatarId}`);
       if (btn) {
         btn.addEventListener('click', () => this.buyOrEquipAvatar(avatarId));
@@ -203,26 +241,46 @@ export class ShopManager {
       }
     });
 
-    // Avatars
-    if (!this.upgrades.purchasedAvatars) this.upgrades.purchasedAvatars = ['apex_viper'];
-    const equipped = this.equippedAvatar || this.upgrades.avatar || 'apex_viper';
+    // Avatars State Logic
+    const unlocked = this.loadUnlockedAvatars();
+    const equipped = this.equippedAvatar || this.loadEquippedAvatar();
 
-    ['apex_viper', 'venom_phantom', 'crimson_apex', 'void_phantom', 'aegis_titan'].forEach(avatarId => {
+    ['viper', 'apex_viper', 'venom', 'venom_dart', 'venom_phantom', 'crimson', 'crimson_titan', 'crimson_apex', 'void_phantom', 'aegis_titan'].forEach(avatarId => {
       const btn = document.getElementById(`select-avatar-${avatarId}`);
       if (btn) {
-        if (equipped === avatarId) {
+        const card = btn.closest('.avatar-card');
+        const isOwned = unlocked.includes(avatarId) ||
+          (avatarId.includes('viper') && unlocked.some(a => a.includes('viper'))) ||
+          (avatarId.includes('venom') && unlocked.some(a => a.includes('venom'))) ||
+          (avatarId.includes('crimson') && unlocked.some(a => a.includes('crimson')));
+
+        const isEquipped = (equipped === avatarId) ||
+          (avatarId.includes('viper') && equipped.includes('viper')) ||
+          (avatarId.includes('venom') && equipped.includes('venom')) ||
+          (avatarId.includes('crimson') && equipped.includes('crimson'));
+
+        if (isEquipped) {
           btn.textContent = 'EQUIPPED';
           btn.disabled = true;
-          btn.className = 'buy-btn equipped-btn';
-        } else if (this.upgrades.purchasedAvatars.includes(avatarId)) {
+          btn.className = 'buy-btn equipped-btn active-avatar';
+          if (card) card.classList.add('active-avatar-card');
+        } else if (isOwned) {
           btn.textContent = 'EQUIP';
           btn.disabled = false;
-          btn.className = 'buy-btn';
+          btn.className = 'buy-btn owned-btn';
+          if (card) card.classList.remove('active-avatar-card');
         } else {
           const cost = this.avatarCosts[avatarId] || 250;
-          btn.textContent = `UNLOCK (${cost} COINS)`;
-          btn.disabled = this.scrap < cost;
-          btn.className = 'buy-btn';
+          if (this.scrap < cost) {
+            btn.textContent = `LOCKED (${cost} COINS)`;
+            btn.disabled = true;
+            btn.className = 'buy-btn locked-btn';
+          } else {
+            btn.textContent = `BUY (${cost} COINS)`;
+            btn.disabled = false;
+            btn.className = 'buy-btn can-buy-btn';
+          }
+          if (card) card.classList.remove('active-avatar-card');
         }
       }
     });

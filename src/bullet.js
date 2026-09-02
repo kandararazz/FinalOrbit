@@ -137,12 +137,8 @@ export class Bullet {
   draw(ctx) {
     ctx.save();
     ctx.fillStyle = this.color;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = this.color;
 
     if (this.type === 'acid') {
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = '#39ff14';
       ctx.fillStyle = '#10ff00';
       ctx.beginPath();
       ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);

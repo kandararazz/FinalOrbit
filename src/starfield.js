@@ -109,11 +109,6 @@ export class Starfield {
       ctx.fillStyle = star.color;
       ctx.globalAlpha = star.alpha;
 
-      if (star.layerIndex === 2) {
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = biome.color;
-      }
-
       if (this.warpBoost > 1.5) {
         const trailLength = star.baseSpeed * 6 * (this.warpBoost - 1);
         ctx.lineWidth = star.size;

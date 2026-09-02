@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>FinalOrbit - Ultimate 2D Space Shooter Arcade</title>
   <meta name="description" content="A fast-paced, high-octane 2D Space Shooter arcade game with dynamic biomes, tactical dodge rolls, homing missiles, level editor, and adaptive retro audio.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,14 +70,11 @@
           <div id="biome-badge" class="biome-badge">DEEP SPACE</div>
         </div>
 
-        <div class="hud-right-placeholder"></div>
-      </div>
-
-      <div class="hud-bottom">
-        <div class="status-bars">
-          <!-- Hull Bar -->
+        <!-- Top Margin Status Bars (Health, Shield, Heat) -->
+        <div class="status-bars top-status-bars">
+          <!-- Health Bar -->
           <div class="bar-container health-bar-container">
-            <span class="bar-label">HULL</span>
+            <span class="bar-label">HEALTH</span>
             <div class="bar-outer">
               <div id="health-bar-inner" class="bar-inner health-fill" style="width: 100%;"></div>
             </div>
@@ -102,7 +99,9 @@
             <span id="heat-text" class="bar-text">0%</span>
           </div>
         </div>
+      </div>
 
+      <div class="hud-bottom">
         <div class="special-container">
           <div class="tactical-actions">
             <!-- Chrono Shift Meter -->
@@ -130,15 +129,27 @@
     <!-- Glowing Neon Wave Announcement Banner -->
     <div id="wave-banner" class="wave-banner hidden">WAVE 1 CLEARED! +1 WIN</div>
 
-    <!-- On-Screen Mobile Action Button -->
-    <button id="mobile-bomb-btn" class="mobile-bomb-btn hidden">💥 SMART BOMB</button>
+    <!-- Circular Neon Mobile Action Button (Bottom-Right Smart Bomb) -->
+    <button id="mobile-bomb-btn" class="mobile-bomb-btn hidden">
+      <span class="mobile-bomb-icon">💥</span>
+      <span class="mobile-bomb-text">BOMB</span>
+      <span id="mobile-bomb-count" class="mobile-bomb-count">1</span>
+    </button>
+
+    <!-- Circular Neon Mobile Action Button (Bottom-Left Dash / Shield Boost) -->
+    <button id="mobile-dash-btn" class="mobile-dash-btn hidden">
+      <span class="mobile-dash-icon">⚡</span>
+      <span class="mobile-dash-text">DASH</span>
+    </button>
+
+    <!-- Top-Right Mobile Quick Controls (Pause & Fullscreen) -->
+    <div id="mobile-header-controls" class="mobile-header-controls hidden">
+      <button id="mobile-pause-btn" class="mobile-icon-btn" title="Pause Game">⏸️</button>
+      <button id="mobile-fullscreen-btn" class="mobile-icon-btn" title="Toggle Fullscreen">⛶</button>
+    </div>
 
     <!-- Controls Toolbar -->
     <div class="quick-controls">
-      <button id="fullscreen-toggle" class="icon-btn" title="Toggle Fullscreen Mode (F11)">⛶</button>
-      <button id="mouse-toggle" class="icon-btn" title="Toggle Mouse Aim Mode">🖱️</button>
-      <button id="autofire-toggle" class="icon-btn" title="Toggle Auto-Fire (T)">🎯</button>
-      <button id="crt-toggle" class="icon-btn" title="Toggle CRT Filter (F)">📺</button>
       <button id="audio-toggle" class="icon-btn" title="Toggle Audio (M)">🔊</button>
     </div>
 
@@ -147,6 +158,7 @@
       <div class="screen-content glow-panel">
         <h1 class="game-title">Final<span class="accent-text">Orbit</span></h1>
         <p class="game-subtitle">ULTIMATE CYBERNETIC ARCADE SHOOTER</p>
+        <p class="author-tagline">Created by Raza</p>
 
         <div class="start-stats">
           <div class="stat-pill">HIGH SCORE: <span id="start-high-score">0</span></div>
@@ -196,8 +208,8 @@
         <!-- Tab 1: Stat Upgrades -->
         <div id="shop-panel-1" class="shop-grid">
           <div class="shop-card">
-            <h4>🛡️ MAX HULL</h4>
-            <p>+10% Hull & Shield capacity per tier.</p>
+            <h4>🛡️ MAX HEALTH</h4>
+            <p>+10% Health & Shield capacity per tier.</p>
             <div class="upgrade-level">LVL <span id="lvl-armor">1</span> / 3</div>
             <button id="buy-armor-btn" class="buy-btn">UPGRADE (<span id="cost-armor">100</span> COINS)</button>
           </div>
@@ -220,33 +232,33 @@
         <!-- Tab 2: Ship Avatars (Skins) -->
         <div id="shop-panel-2" class="shop-grid hidden">
           <div class="shop-card avatar-card">
-            <h4 style="color: #00f0ff;">VIPER</h4>
-            <p>Sleek Cyan Fighter (Default / Free)</p>
-            <button id="select-avatar-apex_viper" class="buy-btn">EQUIPPED</button>
+            <h4 style="color: #00f0ff;">VIPER (DEFAULT)</h4>
+            <p>Sleek cyan delta wings with twin blue plasma engines.</p>
+            <button id="select-avatar-viper" class="buy-btn">EQUIPPED</button>
           </div>
 
           <div class="shop-card avatar-card">
-            <h4 style="color: #39ff14;">VENOM PHANTOM</h4>
-            <p>Acid Green Sleek Delta Wings (250 Coins)</p>
-            <button id="select-avatar-venom_phantom" class="buy-btn">UNLOCK (250 COINS)</button>
+            <h4 style="color: #39ff14;">VENOM DART</h4>
+            <p>Sharp acid-green needle hull with rear wing fins & lime thrusters.</p>
+            <button id="select-avatar-venom" class="buy-btn">BUY (250 COINS)</button>
           </div>
 
           <div class="shop-card avatar-card">
-            <h4 style="color: #ff0033;">CRIMSON APEX</h4>
-            <p>Red & Gold Twin Split Hull (600 Coins)</p>
-            <button id="select-avatar-crimson_apex" class="buy-btn">UNLOCK (600 COINS)</button>
+            <h4 style="color: #ff0055;">CRIMSON TITAN</h4>
+            <p>Heavy red-and-gold split-cockpit armor body & dual plasma vents.</p>
+            <button id="select-avatar-crimson" class="buy-btn">BUY (600 COINS)</button>
           </div>
 
           <div class="shop-card avatar-card">
             <h4 style="color: #a000ff;">VOID PHANTOM</h4>
             <p>Purple Sharper Delta Wings (500 Coins)</p>
-            <button id="select-avatar-void_phantom" class="buy-btn">UNLOCK (500 COINS)</button>
+            <button id="select-avatar-void_phantom" class="buy-btn">BUY (500 COINS)</button>
           </div>
 
           <div class="shop-card avatar-card">
             <h4 style="color: #ff5500;">AEGIS TITAN</h4>
             <p>Orange Heavy Armor Hull (1000 Coins)</p>
-            <button id="select-avatar-aegis_titan" class="buy-btn">UNLOCK (1000 COINS)</button>
+            <button id="select-avatar-aegis_titan" class="buy-btn">BUY (1000 COINS)</button>
           </div>
         </div>
 
@@ -395,8 +407,8 @@
         </div>
 
         <div class="button-row margin-top-20">
-          <button id="restart-btn" class="arcade-btn glow-btn">REDEPLOY SHIP</button>
-          <button id="game-over-shop-btn" class="arcade-btn secondary-btn">HANGAR / AVATARS</button>
+          <button id="restart-btn" class="arcade-btn glow-btn">PLAY AGAIN</button>
+          <button id="game-over-home-btn" class="arcade-btn secondary-btn">RETURN TO HANGAR / HOME</button>
         </div>
       </div>
     </div>

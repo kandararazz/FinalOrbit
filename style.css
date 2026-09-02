@@ -20,12 +20,20 @@
   margin: 0;
   padding: 0;
   user-select: none;
+  -webkit-user-select: none;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
   width: 100%;
   height: 100%;
+  width: 100dvw;
+  height: 100dvh;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
   background-color: var(--bg-dark);
   font-family: var(--font-body);
@@ -33,6 +41,11 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
 }
 
 /* CRT Scanline Shader Overlay */
@@ -122,11 +135,16 @@ html, body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
   max-width: 1200px;
   max-height: 900px;
   background: #03050c;
   box-shadow: 0 0 50px rgba(0, 240, 255, 0.15);
   overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @media (min-width: 1200px) and (min-height: 900px) {
@@ -140,33 +158,178 @@ canvas#game-canvas {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: none;
 }
 
-/* On-Screen Mobile Smart Bomb Button */
+/* Circular Neon On-Screen Mobile Smart Bomb Button (Bottom-Right 64x64px) */
 .mobile-bomb-btn {
   position: absolute;
-  bottom: 25px;
-  right: 25px;
-  z-index: 25;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  z-index: 55;
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  min-height: 64px;
+  border-radius: 50%;
   font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 800;
+  background: radial-gradient(circle at 35% 35%, #ff5500 0%, #ff0055 60%, #990033 100%);
+  border: 3px solid var(--neon-yellow);
+  box-shadow: 0 0 25px rgba(255, 85, 0, 0.8), inset 0 0 10px rgba(255, 234, 0, 0.5);
   color: #fff;
-  background: linear-gradient(135deg, #ff5500, #ff0055);
-  border: 2px solid var(--neon-yellow);
-  padding: 14px 22px;
-  border-radius: 50px;
-  box-shadow: 0 0 20px rgba(255, 85, 0, 0.8);
-  cursor: pointer;
   display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+}
+
+.mobile-bomb-btn:active, .mobile-bomb-btn.touch-active {
+  transform: scale(0.92) !important;
+  filter: brightness(1.4) !important;
+  box-shadow: 0 0 35px rgba(255, 234, 0, 0.9), inset 0 0 15px rgba(255, 255, 255, 0.8) !important;
+}
+
+.mobile-bomb-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.mobile-bomb-text {
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-top: 1px;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 6px rgba(255, 234, 0, 0.8);
+}
+
+.mobile-bomb-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--neon-yellow);
+  color: #03050c;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 900;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #000;
+  box-shadow: 0 0 8px var(--neon-yellow);
 }
 
 .mobile-bomb-btn.active {
-  display: block;
+  display: flex;
 }
 
 .mobile-bomb-btn.hidden {
   display: none;
+}
+
+/* Circular Neon On-Screen Mobile Dash / Shield Boost Button (Bottom-Left 56x56px) */
+.mobile-dash-btn {
+  position: absolute;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: calc(20px + env(safe-area-inset-left, 0px));
+  z-index: 55;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  background: radial-gradient(circle at 35% 35%, #0088ff 0%, #00f0ff 60%, #0044aa 100%);
+  border: 3px solid var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.8), inset 0 0 10px rgba(0, 240, 255, 0.5);
+  color: #fff;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+}
+
+.mobile-dash-btn:active, .mobile-dash-btn.touch-active {
+  transform: scale(0.92) !important;
+  filter: brightness(1.4) !important;
+  box-shadow: 0 0 35px var(--neon-cyan), inset 0 0 15px rgba(255, 255, 255, 0.8) !important;
+}
+
+.mobile-dash-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.mobile-dash-text {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-top: 1px;
+  color: #ffffff;
+  text-shadow: 0 0 6px var(--neon-cyan);
+}
+
+.mobile-dash-btn.active {
+  display: flex;
+}
+
+.mobile-dash-btn.hidden {
+  display: none;
+}
+
+/* Top-Right Header Mobile Quick Controls (Min 44x44px Touch Targets) */
+.mobile-header-controls {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
+  z-index: 60;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.mobile-header-controls.hidden {
+  display: none;
+}
+
+.mobile-icon-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: var(--neon-cyan);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.mobile-icon-btn:active, .mobile-icon-btn.touch-active {
+  transform: scale(0.92) !important;
+  filter: brightness(1.4) !important;
+  box-shadow: 0 0 20px var(--neon-cyan) !important;
 }
 
 /* Boss Top Health Bar Overlay */
@@ -373,8 +536,13 @@ canvas#radar-canvas {
 .status-bars {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   width: 210px;
+}
+
+.top-status-bars {
+  margin-left: auto;
+  margin-right: 280px;
 }
 
 .bar-container {
@@ -455,7 +623,9 @@ canvas#radar-canvas {
   color: var(--neon-cyan);
   background: var(--panel-bg);
   border: 1px solid var(--neon-cyan);
-  padding: 4px 10px;
+  padding: 6px 12px;
+  min-height: 48px;
+  min-width: 48px;
   border-radius: 6px;
   cursor: pointer;
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
@@ -463,6 +633,7 @@ canvas#radar-canvas {
   flex-direction: column;
   gap: 3px;
   align-items: center;
+  justify-content: center;
 }
 
 .chrono-meter-outer {
@@ -486,7 +657,10 @@ canvas#radar-canvas {
   color: var(--text-muted);
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 6px 12px;
+  padding: 8px 12px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
   border-radius: 6px;
 }
 
@@ -509,7 +683,10 @@ canvas#radar-canvas {
   color: var(--neon-magenta);
   background: rgba(255, 0, 119, 0.15);
   border: 1px solid var(--neon-magenta);
-  padding: 6px 14px;
+  padding: 8px 14px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
   border-radius: 6px;
   box-shadow: 0 0 10px rgba(255, 0, 119, 0.4);
 }
@@ -522,7 +699,12 @@ canvas#radar-canvas {
   color: #fff;
   background: linear-gradient(135deg, #ff5500, #ff0055);
   border: 1px solid var(--neon-yellow);
-  padding: 8px 16px;
+  padding: 10px 16px;
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 6px;
   cursor: pointer;
   box-shadow: 0 0 12px rgba(255, 85, 0, 0.6);
@@ -536,17 +718,19 @@ canvas#radar-canvas {
   right: 16px;
   z-index: 20;
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 .icon-btn {
   background: var(--panel-bg);
   border: 1px solid rgba(0, 240, 255, 0.4);
   color: var(--neon-cyan);
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -555,6 +739,13 @@ canvas#radar-canvas {
   box-shadow: var(--border-glow);
   transition: all 0.2s ease;
   pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+}
+
+.icon-btn:hover, .icon-btn:active {
+  transform: scale(1.1);
+  background: rgba(0, 240, 255, 0.2);
 }
 
 .icon-btn:hover {
@@ -643,6 +834,17 @@ canvas#radar-canvas {
   letter-spacing: 3px;
   color: var(--text-muted);
   margin-top: -12px;
+}
+
+.author-tagline {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 12px var(--neon-cyan);
+  margin-top: -6px;
+  margin-bottom: 6px;
 }
 
 .start-stats {
@@ -807,7 +1009,9 @@ kbd {
   font-family: var(--font-display);
   font-size: 0.75rem;
   font-weight: 800;
-  padding: 8px 10px;
+  padding: 12px 10px;
+  min-height: 48px;
+  min-width: 48px;
   background: linear-gradient(135deg, var(--gold-color), #ffaa00);
   color: #03050c;
   border: none;
@@ -820,6 +1024,38 @@ kbd {
 .equipped-btn {
   background: linear-gradient(135deg, var(--neon-green), #00aa44);
   color: #03050c;
+}
+
+.active-avatar-card {
+  border-color: var(--neon-cyan) !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(0, 240, 255, 0.2) !important;
+}
+
+.buy-btn.active-avatar {
+  background: linear-gradient(135deg, var(--neon-cyan), #0088cc) !important;
+  color: #03050c !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.8) !important;
+  opacity: 1 !important;
+}
+
+.buy-btn.owned-btn {
+  background: linear-gradient(135deg, var(--neon-green), #00aa44) !important;
+  color: #03050c !important;
+}
+
+.buy-btn.can-buy-btn {
+  background: linear-gradient(135deg, var(--gold-color), #ff8800) !important;
+  color: #03050c !important;
+  font-weight: 800 !important;
+}
+
+.buy-btn.locked-btn {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
 }
 
 .buy-btn:hover {
@@ -1000,7 +1236,9 @@ canvas#editor-canvas {
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 2px;
-  padding: 12px 24px;
+  padding: 14px 24px;
+  min-height: 48px;
+  min-width: 48px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;

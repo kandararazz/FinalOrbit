@@ -33,9 +33,29 @@ export class HUDManager {
     this.radarCanvas = document.getElementById('radar-canvas');
     this.radarCtx = this.radarCanvas ? this.radarCanvas.getContext('2d') : null;
 
+    this.mobileBombCountEl = document.getElementById('mobile-bomb-count');
+
     this.highScore = this.loadHighScore();
     this.winsValEl = document.getElementById('wins-val');
     this.waveBannerEl = document.getElementById('wave-banner');
+
+    // State dirty-checking cache to eliminate per-frame DOM updates
+    this._lastScore = -1;
+    this._lastScrap = -1;
+    this._lastWave = -1;
+    this._lastWins = -1;
+    this._lastBiome = '';
+    this._lastHealth = -1;
+    this._lastShield = -1;
+    this._lastHeat = -1;
+    this._lastOverheated = null;
+    this._lastBossHp = -1;
+    this._lastCombo = -1;
+    this._lastDashCooldown = null;
+    this._lastChrono = -1;
+    this._lastWeaponMode = '';
+    this._lastBombs = -1;
+
     this.updateHighScoreDisplay();
   }
 
@@ -100,92 +120,136 @@ export class HUDManager {
     if (vicScreen) vicScreen.classList.remove('hidden');
   }
 
-  update(game) {
+  update(game, forceUpdate = false) {
     const { score, wave, combo, scrapCollected } = game;
     const player = game.player;
 
-    if (this.scoreValEl) this.scoreValEl.textContent = this.padScore(score);
-    if (this.scrapValEl) this.scrapValEl.textContent = `🪙 ${scrapCollected}`;
-    if (this.waveValEl) this.waveValEl.textContent = wave.toString();
-    if (this.winsValEl) this.winsValEl.textContent = `🏆 ${game.shop.wins}`;
-    if (this.biomeBadgeEl) this.biomeBadgeEl.textContent = game.starfield.getCurrentBiomeName();
+    if (forceUpdate || score !== this._lastScore) {
+      this._lastScore = score;
+      if (this.scoreValEl) this.scoreValEl.textContent = this.padScore(score);
+    }
 
-    // Bars
+    if (forceUpdate || scrapCollected !== this._lastScrap) {
+      this._lastScrap = scrapCollected;
+      if (this.scrapValEl) this.scrapValEl.textContent = `🪙 ${scrapCollected}`;
+    }
+
+    if (forceUpdate || wave !== this._lastWave) {
+      this._lastWave = wave;
+      if (this.waveValEl) this.waveValEl.textContent = wave.toString();
+    }
+
+    if (forceUpdate || game.shop.wins !== this._lastWins) {
+      this._lastWins = game.shop.wins;
+      if (this.winsValEl) this.winsValEl.textContent = `🏆 ${game.shop.wins}`;
+    }
+
+    const currentBiome = game.starfield.getCurrentBiomeName();
+    if (forceUpdate || currentBiome !== this._lastBiome) {
+      this._lastBiome = currentBiome;
+      if (this.biomeBadgeEl) this.biomeBadgeEl.textContent = currentBiome;
+    }
+
+    // Health & Shield Bars
     const healthPercent = Math.max(0, Math.min(100, Math.round((player.health / player.maxHealth) * 100)));
-    if (this.healthBarInner) this.healthBarInner.style.width = `${healthPercent}%`;
-    if (this.healthText) this.healthText.textContent = `${healthPercent}%`;
-
-    const shieldPercent = Math.max(0, Math.min(100, Math.round((player.shield / player.maxShield) * 100)));
-    if (this.shieldBarInner) this.shieldBarInner.style.width = `${shieldPercent}%`;
-    if (this.shieldText) this.shieldText.textContent = `${shieldPercent}%`;
-
-    const heatPercent = Math.max(0, Math.min(100, Math.round((player.weapons.heat / player.weapons.maxHeat) * 100)));
-    if (this.heatBarInner) {
-      this.heatBarInner.style.width = `${heatPercent}%`;
-      if (player.weapons.isOverheated) {
-        this.heatBarInner.style.background = '#ff0055';
-      } else {
-        this.heatBarInner.style.background = 'linear-gradient(90deg, #ffea00, #ff0055)';
+    if (forceUpdate || healthPercent !== this._lastHealth) {
+      this._lastHealth = healthPercent;
+      if (this.healthBarInner) this.healthBarInner.style.width = `${healthPercent}%`;
+      if (this.healthText) this.healthText.textContent = `${healthPercent}%`;
+      if (this.damageVignette) {
+        if (healthPercent < 25 && healthPercent > 0) {
+          this.damageVignette.classList.remove('hidden');
+        } else {
+          this.damageVignette.classList.add('hidden');
+        }
       }
     }
-    if (this.heatText) this.heatText.textContent = player.weapons.isOverheated ? 'JAMMED!' : `${heatPercent}%`;
+
+    const shieldPercent = Math.max(0, Math.min(100, Math.round((player.shield / player.maxShield) * 100)));
+    if (forceUpdate || shieldPercent !== this._lastShield) {
+      this._lastShield = shieldPercent;
+      if (this.shieldBarInner) this.shieldBarInner.style.width = `${shieldPercent}%`;
+      if (this.shieldText) this.shieldText.textContent = `${shieldPercent}%`;
+    }
+
+    const heatPercent = Math.max(0, Math.min(100, Math.round((player.weapons.heat / player.weapons.maxHeat) * 100)));
+    const isOverheated = player.weapons.isOverheated;
+    if (forceUpdate || heatPercent !== this._lastHeat || isOverheated !== this._lastOverheated) {
+      this._lastHeat = heatPercent;
+      this._lastOverheated = isOverheated;
+      if (this.heatBarInner) {
+        this.heatBarInner.style.width = `${heatPercent}%`;
+        this.heatBarInner.style.background = isOverheated ? '#ff0055' : 'linear-gradient(90deg, #ffea00, #ff0055)';
+      }
+      if (this.heatText) this.heatText.textContent = isOverheated ? 'JAMMED!' : `${heatPercent}%`;
+    }
 
     // Boss Top Health Bar Overlay
     const boss = game.enemies.find(e => e.type === 'boss' && e.active);
     if (boss && this.bossBarContainer && this.bossBarInner) {
-      this.bossBarContainer.classList.remove('hidden');
       const bossHpPercent = Math.max(0, Math.min(100, Math.round((boss.health / boss.maxHealth) * 100)));
-      this.bossBarInner.style.width = `${bossHpPercent}%`;
-    } else if (this.bossBarContainer) {
+      if (forceUpdate || bossHpPercent !== this._lastBossHp) {
+        this._lastBossHp = bossHpPercent;
+        this.bossBarContainer.classList.remove('hidden');
+        this.bossBarInner.style.width = `${bossHpPercent}%`;
+      }
+    } else if (this.bossBarContainer && this._lastBossHp !== -1) {
+      this._lastBossHp = -1;
       this.bossBarContainer.classList.add('hidden');
     }
 
-    // Damage Vignette (<25% HP)
-    if (this.damageVignette) {
-      if (healthPercent < 25 && healthPercent > 0) {
-        this.damageVignette.classList.remove('hidden');
-      } else {
-        this.damageVignette.classList.add('hidden');
+    // Combo Badge
+    if (forceUpdate || combo !== this._lastCombo) {
+      this._lastCombo = combo;
+      if (combo > 1) {
+        if (this.comboBadge) this.comboBadge.classList.remove('hidden');
+        if (this.comboValEl) this.comboValEl.textContent = combo.toString();
+      } else if (this.comboBadge) {
+        this.comboBadge.classList.add('hidden');
       }
     }
 
-    // Combo Badge
-    if (combo > 1) {
-      if (this.comboBadge) this.comboBadge.classList.remove('hidden');
-      if (this.comboValEl) this.comboValEl.textContent = combo.toString();
-    } else {
-      if (this.comboBadge) this.comboBadge.classList.add('hidden');
-    }
-
     if (this.dashBadge) {
-      if (player.dashCooldown === 0) {
-        this.dashBadge.classList.add('ready');
-        this.dashBadge.textContent = 'DASH [SHIFT]';
-      } else {
-        this.dashBadge.classList.remove('ready');
-        this.dashBadge.textContent = 'DASH COOLDOWN';
+      const canDash = player.dashCooldown === 0;
+      if (forceUpdate || canDash !== this._lastDashCooldown) {
+        this._lastDashCooldown = canDash;
+        if (canDash) {
+          this.dashBadge.classList.add('ready');
+          this.dashBadge.textContent = 'DASH [SHIFT]';
+        } else {
+          this.dashBadge.classList.remove('ready');
+          this.dashBadge.textContent = 'DASH COOLDOWN';
+        }
       }
     }
 
     if (this.chronoMeterFill) {
       const chronoPercent = Math.round((game.chronoMeter / game.maxChronoMeter) * 100);
-      this.chronoMeterFill.style.width = `${chronoPercent}%`;
-    }
-
-    // Bottom-Right Weapon Badge Display
-    if (this.weaponBadge) {
-      let modeText = 'DUAL LASER';
-      if (player.weapons.mode === 'triple' || player.weapons.mode === 'spread') {
-        modeText = 'SPREAD SHOT';
-      } else if (player.weapons.mode === 'railgun' || player.weapons.mode === 'rail') {
-        modeText = 'PLASMA RAIL';
-      } else {
-        modeText = player.weapons.mode.toUpperCase();
+      if (forceUpdate || chronoPercent !== this._lastChrono) {
+        this._lastChrono = chronoPercent;
+        this.chronoMeterFill.style.width = `${chronoPercent}%`;
       }
-      this.weaponBadge.textContent = modeText;
     }
 
-    if (this.bombCountEl) this.bombCountEl.textContent = player.bombs.toString();
+    // Weapon Badge
+    let modeText = 'DUAL LASER';
+    if (player.weapons.mode === 'triple' || player.weapons.mode === 'spread') {
+      modeText = 'SPREAD SHOT';
+    } else if (player.weapons.mode === 'railgun' || player.weapons.mode === 'rail') {
+      modeText = 'PLASMA RAIL';
+    } else {
+      modeText = player.weapons.mode.toUpperCase();
+    }
+    if (forceUpdate || modeText !== this._lastWeaponMode) {
+      this._lastWeaponMode = modeText;
+      if (this.weaponBadge) this.weaponBadge.textContent = modeText;
+    }
+
+    if (forceUpdate || player.bombs !== this._lastBombs) {
+      this._lastBombs = player.bombs;
+      if (this.bombCountEl) this.bombCountEl.textContent = player.bombs.toString();
+      if (this.mobileBombCountEl) this.mobileBombCountEl.textContent = player.bombs.toString();
+    }
 
     this.renderRadar(game);
   }

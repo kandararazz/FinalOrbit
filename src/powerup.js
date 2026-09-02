@@ -86,8 +86,6 @@ export class PowerUp {
     ctx.fillStyle = 'rgba(5, 10, 25, 0.9)';
     ctx.strokeStyle = this.color;
     ctx.lineWidth = 2;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = this.color;
 
     if (this.type === 'nano') {
       // Hexagonal Nano Pod
@@ -111,7 +109,6 @@ export class PowerUp {
 
     ctx.font = this.type === 'scrap' ? "12px sans-serif" : "800 8px 'Orbitron', sans-serif";
     ctx.fillStyle = this.color;
-    ctx.shadowBlur = 0;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.label, this.x, this.y);

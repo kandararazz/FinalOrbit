@@ -74,6 +74,7 @@ export class Game {
 
     this.keys = {};
     this.touchActive = false;
+    this.movementTouchId = null;
     this.lastTime = 0;
 
     this.setupEventListeners();
@@ -150,11 +151,14 @@ export class Game {
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
       if (this.state !== GAME_STATES.PLAYING) return;
+      
+      const touch = e.changedTouches[0];
+      this.movementTouchId = touch.identifier;
       this.touchActive = true;
       this.player.touchControlActive = true;
 
-      const touch = e.touches[0];
       const rect = this.canvas.getBoundingClientRect();
       this.player.targetTouchX = touch.clientX - rect.left;
       this.player.targetTouchY = touch.clientY - rect.top;
@@ -164,30 +168,94 @@ export class Game {
         this.player.triggerDash();
       }
       this.player.lastTapTouch = now;
-    });
+    }, { passive: false });
 
     this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
       if (this.state !== GAME_STATES.PLAYING) return;
-      const touch = e.touches[0];
+
+      let touch = null;
+      if (this.movementTouchId !== null) {
+        for (let i = 0; i < e.touches.length; i++) {
+          if (e.touches[i].identifier === this.movementTouchId) {
+            touch = e.touches[i];
+            break;
+          }
+        }
+      }
+      if (!touch) touch = e.touches[0];
+      if (!touch) return;
+
       const rect = this.canvas.getBoundingClientRect();
       this.player.targetTouchX = touch.clientX - rect.left;
       this.player.targetTouchY = touch.clientY - rect.top;
-    });
+    }, { passive: false });
 
-    this.canvas.addEventListener('touchend', (e) => {
-      if (e.touches.length === 0) {
+    const stopTouchFlight = (e) => {
+      e.preventDefault();
+      let touchStillActive = false;
+      if (this.movementTouchId !== null) {
+        for (let i = 0; i < e.touches.length; i++) {
+          if (e.touches[i].identifier === this.movementTouchId) {
+            touchStillActive = true;
+            break;
+          }
+        }
+      }
+      if (!touchStillActive || e.touches.length === 0) {
         this.touchActive = false;
         this.player.touchControlActive = false;
+        this.movementTouchId = null;
       }
+    };
+
+    this.canvas.addEventListener('touchend', stopTouchFlight, { passive: false });
+    this.canvas.addEventListener('touchcancel', stopTouchFlight, { passive: false });
+
+    // Dedicated Touch Event Handler binding helper for Virtual On-Screen Buttons
+    const bindVirtualBtn = (btnId, action) => {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+
+      const handleTouchStart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.add('touch-active');
+        action();
+      };
+      const handleTouchEnd = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove('touch-active');
+      };
+
+      btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+      btn.addEventListener('touchend', handleTouchEnd, { passive: false });
+      btn.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        action();
+      });
+    };
+
+    bindVirtualBtn('mobile-bomb-btn', () => {
+      if (this.state === GAME_STATES.PLAYING) this.triggerSmartBomb();
     });
 
-    const mobileBombBtn = document.getElementById('mobile-bomb-btn');
-    if (mobileBombBtn) {
-      mobileBombBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (this.state === GAME_STATES.PLAYING) this.triggerSmartBomb();
-      });
-    }
+    bindVirtualBtn('mobile-dash-btn', () => {
+      if (this.state === GAME_STATES.PLAYING) this.player.triggerDash();
+    });
+
+    bindVirtualBtn('mobile-pause-btn', () => {
+      if (this.state === GAME_STATES.PLAYING || this.state === GAME_STATES.PAUSED) this.togglePause();
+    });
+
+    bindVirtualBtn('mobile-fullscreen-btn', () => {
+      if (window.toggleFullscreenApp) {
+        window.toggleFullscreenApp();
+      }
+    });
 
     const mouseBtn = document.getElementById('mouse-toggle');
     if (mouseBtn) {
@@ -258,6 +326,16 @@ export class Game {
     }
   }
 
+  distToSegment(px, py, x1, y1, x2, y2) {
+    const l2 = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1);
+    if (l2 === 0) return Math.hypot(px - x1, py - y1);
+    let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const projX = x1 + t * (x2 - x1);
+    const projY = y1 + t * (y2 - y1);
+    return Math.hypot(px - projX, py - projY);
+  }
+
   rectIntersect(r1, r2) {
     return !(
       r2.x > r1.x + r1.width ||
@@ -265,6 +343,54 @@ export class Game {
       r2.y > r1.y + r1.height ||
       r2.y + r2.height < r1.y
     );
+  }
+
+  returnToHome() {
+    this.state = GAME_STATES.START;
+    this.score = 0;
+    this.wave = 1;
+    this.combo = 1;
+    this.comboTimer = 0;
+    this.scrapCollected = 0;
+    this.chronoMeter = 100;
+    this.isChronoActive = false;
+    this.recentKillsCount = 0;
+    this.rampageActive = false;
+    this.timeScale = 1.0;
+
+    this.enemies = [];
+    this.bullets = [];
+    this.powerups = [];
+    this.hazards = [];
+    this.particleSystem.clear();
+    this.augments.reset();
+
+    this.player.reset(this.canvas.width, this.canvas.height, this.shop.upgrades);
+    soundManager.stopAdaptiveMusic();
+
+    document.getElementById('game-over-screen').classList.add('hidden');
+    document.getElementById('pause-screen').classList.add('hidden');
+    document.getElementById('victory-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('editor-screen').classList.add('hidden');
+    document.getElementById('leaderboard-screen').classList.add('hidden');
+
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('radar-container').classList.add('hidden');
+
+    const mBomb = document.getElementById('mobile-bomb-btn');
+    const mDash = document.getElementById('mobile-dash-btn');
+    const mHeader = document.getElementById('mobile-header-controls');
+
+    if (mBomb) { mBomb.classList.add('hidden'); mBomb.classList.remove('active'); }
+    if (mDash) { mDash.classList.add('hidden'); mDash.classList.remove('active'); }
+    if (mHeader) { mHeader.classList.add('hidden'); }
+
+    const startScreen = document.getElementById('start-screen');
+    if (startScreen) startScreen.classList.remove('hidden');
+
+    this.shop.updateUI();
+    this.hud.updateHighScoreDisplay();
   }
 
   startNewGame(endless = false) {
@@ -304,11 +430,14 @@ export class Game {
     document.getElementById('hud').classList.remove('hidden');
     document.getElementById('radar-container').classList.remove('hidden');
 
-    const mobileBombBtn = document.getElementById('mobile-bomb-btn');
-    if (mobileBombBtn && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
-      mobileBombBtn.classList.remove('hidden');
-      mobileBombBtn.classList.add('active');
-    }
+    const isTouchDev = ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
+    const mBomb = document.getElementById('mobile-bomb-btn');
+    const mDash = document.getElementById('mobile-dash-btn');
+    const mHeader = document.getElementById('mobile-header-controls');
+
+    if (mBomb && isTouchDev) { mBomb.classList.remove('hidden'); mBomb.classList.add('active'); }
+    if (mDash && isTouchDev) { mDash.classList.remove('hidden'); mDash.classList.add('active'); }
+    if (mHeader && isTouchDev) { mHeader.classList.remove('hidden'); }
   }
 
   playCustomWave(jsonConfig) {
@@ -362,6 +491,13 @@ export class Game {
     this.waveInProgress = true;
     this.spawnTimer = 0;
     this.waveEnemiesToSpawn = [];
+
+    // State Transition Cleanup: Explicitly clear lingering enemy bullets before spawning the next wave!
+    for (let i = this.bullets.length - 1; i >= 0; i--) {
+      if (this.bullets[i].isEnemy) this.bullets.splice(i, 1);
+    }
+    this.shop.saveCoins();
+    this.shop.saveWins();
 
     const biomeIndex = Math.floor((waveNum - 1) / 4) % 5;
     this.starfield.setBiome(biomeIndex);
@@ -427,7 +563,7 @@ export class Game {
     this.player.bombs--;
     soundManager.playBomb();
     this.addScreenShake(22);
-    if ('vibrate' in navigator) navigator.vibrate([20]);
+    if ('vibrate' in navigator) navigator.vibrate(15);
 
     this.particleSystem.triggerSmartBomb(
       this.canvas.width / 2,
@@ -436,7 +572,9 @@ export class Game {
       this.canvas.height
     );
 
-    this.bullets = this.bullets.filter(b => !b.isEnemy);
+    for (let i = this.bullets.length - 1; i >= 0; i--) {
+      if (this.bullets[i].isEnemy) this.bullets.splice(i, 1);
+    }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
@@ -579,12 +717,18 @@ export class Game {
           }
         }
       } else {
-        if (this.rectIntersect(bullet.getBounds(), playerBounds)) {
-          bullet.active = false;
+        const bRadius = Math.max(bullet.width, bullet.height) / 2;
+        const pRadius = this.player.width * 0.35;
+        const dist = Math.hypot(bullet.x - this.player.x, bullet.y - this.player.y);
+
+        if (dist < bRadius + pRadius || this.rectIntersect(bullet.getBounds(), playerBounds)) {
+          bullet.active = false; // Vanish laser projectile immediately on impact
           this.particleSystem.createSparks(bullet.x, bullet.y, '#ff0055', 8);
 
-          const result = this.player.takeDamage(bullet.damage);
-          if (result === 'HULL_DAMAGED' || result === 'DESTROYED') {
+          const result = this.player.takeDamage(bullet.damage || 15);
+          this.hud.update(this); // Force HUD health/shield bar sync immediately on hit!
+
+          if (result === 'HEALTH_DAMAGED' || result === 'DESTROYED') {
             this.addScreenShake(8);
           }
 
@@ -601,36 +745,57 @@ export class Game {
       }
     }
 
-    // Player vs Sharp Hazard Obstacles (Jagged Asteroids & Energy Spike Mines)
+    // Player vs Sharp Hazard Obstacles & Sweeping Laser Grid
     for (let hIdx = this.hazards.length - 1; hIdx >= 0; hIdx--) {
       const hz = this.hazards[hIdx];
-      if ((hz instanceof Asteroid || hz instanceof EnergySpikeMine) && hz.active) {
-        if (this.rectIntersect(playerBounds, hz.getBounds())) {
-          const result = this.player.takeObstacleImpact();
-          if (result === 'OBSTACLE_SHIELD_SHATTER' || result === 'OBSTACLE_HULL_HIT') {
-            hz.active = false;
-            const explColor = hz instanceof EnergySpikeMine ? '#ff3300' : '#8c6d58';
-            this.particleSystem.createExplosion(hz.x, hz.y, 25, explColor, 1.3);
-            this.particleSystem.createSparks(this.player.x, this.player.y, '#ffea00', 15);
-            this.addScreenShake(12); // Quick 0.2s screen shake
-            soundManager.playHit();
+      if (!hz.active) continue;
 
-            const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-30% SHIELD' : '-35% HULL';
-            const textColor = result === 'OBSTACLE_SHIELD_SHATTER' ? '#00f0ff' : '#ff0055';
-            this.particleSystem.addFloatingText(this.player.x, this.player.y, textLabel, textColor);
-          } else if (result === 'DESTROYED') {
-            hz.active = false;
+      if (hz instanceof SweepingLaserGrid) {
+        // Point-to-line-segment distance check for continuous beam lasers!
+        const pX = this.player.x;
+        const pY = this.player.y;
+        const pRad = this.player.width * 0.35;
+        const laserRad = 6;
+
+        const leftEnd = hz.gapX - hz.gapWidth / 2;
+        const rightStart = hz.gapX + hz.gapWidth / 2;
+
+        const dLeft = this.distToSegment(pX, pY, 0, hz.y, leftEnd, hz.y);
+        const dRight = this.distToSegment(pX, pY, rightStart, hz.y, this.canvas.width, hz.y);
+
+        if (dLeft <= pRad + laserRad || dRight <= pRad + laserRad) {
+          const result = this.player.takeDamage(20);
+          this.particleSystem.createSparks(pX, hz.y, '#ff0055', 6);
+          this.addScreenShake(10);
+          this.hud.update(this); // Force HUD update immediately!
+
+          if (result === 'DESTROYED') {
             this.handlePlayerGameOver();
           }
         }
-      } else if (hz instanceof SweepingLaserGrid && hz.active) {
-        if (Math.abs(this.player.y - hz.y) < 12) {
-          const leftBound = hz.gapX - hz.gapWidth / 2;
-          const rightBound = hz.gapX + hz.gapWidth / 2;
-          if (this.player.x < leftBound || this.player.x > rightBound) {
-            const result = this.player.takeDamage(40);
+      } else if (hz instanceof Asteroid || hz instanceof EnergySpikeMine) {
+        const dist = Math.hypot(hz.x - this.player.x, hz.y - this.player.y);
+        const pRad = this.player.radius || 20;
+        const hzRad = hz.radius || 24;
+
+        if (dist < pRad + hzRad) {
+          const result = this.player.takeObstacleImpact();
+          if (result) {
+            hz.active = false;
+            const explColor = hz instanceof EnergySpikeMine ? '#ff0033' : '#ff6600';
+            this.particleSystem.createExplosion(hz.x, hz.y, 12, explColor, 1.2);
+            this.particleSystem.createSparks(this.player.x, this.player.y, '#ffea00', 10);
             this.addScreenShake(12);
-            if (result === 'DESTROYED') this.handlePlayerGameOver();
+            soundManager.playHit();
+            this.hud.update(this, true); // Force HUD real-time update on hit!
+
+            const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-25 SHIELD' : '-30 HULL';
+            const textColor = result === 'OBSTACLE_SHIELD_SHATTER' ? '#00f0ff' : '#ff0055';
+            this.particleSystem.addFloatingText(this.player.x, this.player.y, textLabel, textColor);
+
+            if (result === 'DESTROYED') {
+              this.handlePlayerGameOver();
+            }
           }
         }
       }
@@ -672,10 +837,11 @@ export class Game {
         if (p.type === 'scrap') {
           this.scrapCollected += 10;
           this.shop.addScrap(10);
+          if ('vibrate' in navigator) navigator.vibrate(15);
         } else if (p.type === 'nano') {
           this.player.heal(this.player.maxHealth * 0.25);
           soundManager.playPowerup();
-          this.particleSystem.addFloatingText(p.x, p.y, '+25% NANO HULL', '#00ff66');
+          this.particleSystem.addFloatingText(p.x, p.y, '+25% HEALTH', '#00ff66');
         } else if (p.type === 'booster') {
           this.player.restoreShield(this.player.maxShield * 0.5);
           soundManager.playPowerup();
@@ -695,7 +861,7 @@ export class Game {
         } else if (p.type === 'health') {
           this.player.heal(30);
           soundManager.playPowerup();
-          this.particleSystem.addFloatingText(p.x, p.y, '+30 HULL', '#00ff66');
+          this.particleSystem.addFloatingText(p.x, p.y, '+30 HEALTH', '#00ff66');
         } else if (p.type === 'shield') {
           this.player.restoreShield(40);
           soundManager.playPowerup();
@@ -728,6 +894,8 @@ export class Game {
 
     setTimeout(() => {
       this.state = GAME_STATES.GAME_OVER;
+      this.shop.saveCoins();
+      this.shop.saveWins();
       this.hud.showGameOver(this.score, this.wave, this.scrapCollected);
       this.leaderboard.addScore(this.score, this.wave);
       document.getElementById('game-over-screen').classList.remove('hidden');

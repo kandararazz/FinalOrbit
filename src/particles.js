@@ -26,9 +26,7 @@ export class PolygonDebris {
 
     // Emit smoke trail particle
     if (Math.random() < 0.4) {
-      particleSystem.particles.push(
-        new Particle(this.x, this.y, 'rgba(255, 255, 255, 0.4)', (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5, 3, 20, false)
-      );
+      particleSystem.spawnParticle(this.x, this.y, 'rgba(255, 255, 255, 0.4)', (Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.5, 3, 20, false);
     }
   }
 
@@ -40,8 +38,6 @@ export class PolygonDebris {
     const alpha = Math.max(0, this.life / this.maxLife);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = this.color;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = this.color;
 
     ctx.beginPath();
     ctx.moveTo(0, -this.size / 2);
@@ -55,7 +51,11 @@ export class PolygonDebris {
 }
 
 export class Particle {
-  constructor(x, y, color, vx, vy, size, life, glow = true) {
+  constructor(x = 0, y = 0, color = '#ffffff', vx = 0, vy = 0, size = 2, life = 20, glow = false) {
+    this.init(x, y, color, vx, vy, size, life, glow);
+  }
+
+  init(x, y, color, vx, vy, size, life, glow = false) {
     this.x = x;
     this.y = y;
     this.color = color;
@@ -81,10 +81,6 @@ export class Particle {
     ctx.save();
     ctx.globalAlpha = this.alpha;
     ctx.fillStyle = this.color;
-    if (this.glow) {
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = this.color;
-    }
     ctx.beginPath();
     ctx.arc(this.x, this.y, Math.max(0.5, this.size * this.alpha), 0, Math.PI * 2);
     ctx.fill();
@@ -115,8 +111,6 @@ export class FloatingText {
     ctx.globalAlpha = alpha;
     ctx.font = `800 ${this.fontSize}px 'Orbitron', sans-serif`;
     ctx.fillStyle = this.color;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = this.color;
     ctx.textAlign = 'center';
     ctx.fillText(this.text, this.x, this.y);
     ctx.restore();
@@ -146,9 +140,7 @@ export class Shockwave {
     const alpha = Math.max(0, this.life / this.maxLife);
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = this.color;
-    ctx.lineWidth = this.lineWidth;
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = this.color;
+    ctx.lineWidth = Math.max(1, this.lineWidth);
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -159,9 +151,28 @@ export class Shockwave {
 export class ParticleSystem {
   constructor() {
     this.particles = [];
+    this.particlePool = [];
     this.floatingTexts = [];
     this.shockwaves = [];
     this.debris = [];
+    this.maxParticles = 80;
+  }
+
+  spawnParticle(x, y, color, vx, vy, size, life, glow = false) {
+    if (this.particles.length >= this.maxParticles) {
+      // Hard cap at 80: drop oldest particle immediately
+      const oldest = this.particles.shift();
+      if (oldest) this.particlePool.push(oldest);
+    }
+
+    let p = this.particlePool.pop();
+    if (p) {
+      p.init(x, y, color, vx, vy, size, life, glow);
+    } else {
+      p = new Particle(x, y, color, vx, vy, size, life, glow);
+    }
+    this.particles.push(p);
+    return p;
   }
 
   createShipDebris(x, y, color = '#00f0ff') {
@@ -170,34 +181,34 @@ export class ParticleSystem {
     for (let i = 0; i < count; i++) {
       this.debris.push(new PolygonDebris(x, y, color));
     }
-    this.createExplosion(x, y, 40, color, 1.8);
+    this.createExplosion(x, y, 30, color, 1.5);
   }
 
-  createExplosion(x, y, count = 25, color = '#ff5500', sizeScale = 1) {
+  createExplosion(x, y, count = 20, color = '#ff5500', sizeScale = 1) {
     const palette = [color, '#ff0077', '#ffea00', '#ffffff'];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = (Math.random() * 6 + 1.5) * sizeScale;
+      const speed = (Math.random() * 5 + 1.5) * sizeScale;
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
-      const size = (Math.random() * 4 + 2) * sizeScale;
-      const life = Math.floor(Math.random() * 30 + 20);
+      const size = (Math.random() * 3 + 2) * sizeScale;
+      const life = Math.floor(Math.random() * 25 + 15);
       const particleColor = palette[Math.floor(Math.random() * palette.length)];
 
-      this.particles.push(new Particle(x, y, particleColor, vx, vy, size, life));
+      this.spawnParticle(x, y, particleColor, vx, vy, size, life);
     }
-    this.shockwaves.push(new Shockwave(x, y, 60 * sizeScale, color));
+    this.shockwaves.push(new Shockwave(x, y, 50 * sizeScale, color));
   }
 
-  createSparks(x, y, color = '#00f0ff', count = 8) {
+  createSparks(x, y, color = '#00f0ff', count = 6) {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 4 + 1;
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
       const size = Math.random() * 2 + 1;
-      const life = Math.floor(Math.random() * 15 + 10);
-      this.particles.push(new Particle(x, y, color, vx, vy, size, life, true));
+      const life = Math.floor(Math.random() * 12 + 8);
+      this.spawnParticle(x, y, color, vx, vy, size, life, false);
     }
   }
 
@@ -208,9 +219,9 @@ export class ParticleSystem {
     const vy = Math.sin(spreadAngle) * speed;
     const colors = ['#00f0ff', '#0088ff', '#ffffff'];
     const color = colors[Math.floor(Math.random() * colors.length)];
-    const size = Math.random() * 3 + 1.5;
-    const life = Math.floor(Math.random() * 12 + 6);
-    this.particles.push(new Particle(x, y, color, vx, vy, size, life, true));
+    const size = Math.random() * 2.5 + 1.5;
+    const life = Math.floor(Math.random() * 10 + 5);
+    this.spawnParticle(x, y, color, vx, vy, size, life, false);
   }
 
   addFloatingText(x, y, text, color = '#ffea00', fontSize = 16) {
@@ -219,14 +230,14 @@ export class ParticleSystem {
 
   triggerSmartBomb(centerX, centerY, width, height) {
     this.shockwaves.push(new Shockwave(centerX, centerY, Math.max(width, height) * 0.8, '#ff0055'));
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 50; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 12 + 4;
+      const speed = Math.random() * 10 + 3;
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
       const colors = ['#ff0055', '#ffea00', '#00f0ff', '#ffffff'];
       const color = colors[Math.floor(Math.random() * colors.length)];
-      this.particles.push(new Particle(centerX, centerY, color, vx, vy, Math.random() * 5 + 2, 40));
+      this.spawnParticle(centerX, centerY, color, vx, vy, Math.random() * 4 + 2, 30);
     }
   }
 
@@ -239,10 +250,18 @@ export class ParticleSystem {
     }
 
     for (let i = this.particles.length - 1; i >= 0; i--) {
-      this.particles[i].update();
-      if (this.particles[i].life <= 0) {
+      const p = this.particles[i];
+      p.update();
+      if (p.life <= 0) {
         this.particles.splice(i, 1);
+        this.particlePool.push(p);
       }
+    }
+
+    // Hard-cap active particle count strictly at max 150
+    if (this.particles.length > this.maxParticles) {
+      const overflow = this.particles.splice(0, this.particles.length - this.maxParticles);
+      overflow.forEach(p => this.particlePool.push(p));
     }
 
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
@@ -268,9 +287,11 @@ export class ParticleSystem {
   }
 
   clear() {
+    this.particles.forEach(p => this.particlePool.push(p));
     this.particles = [];
     this.floatingTexts = [];
     this.shockwaves = [];
     this.debris = [];
   }
 }
+
