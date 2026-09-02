@@ -1436,19 +1436,37 @@ canvas#editor-canvas {
   letter-spacing: 3px;
 }
 
+.button-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.launch-btn {
+  font-size: 1.15rem !important;
+  padding: 16px 28px !important;
+  background: linear-gradient(135deg, #00f0ff, #0077ff) !important;
+  border: 2px solid var(--neon-cyan) !important;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.7) !important;
+}
+
 .gold-border-btn {
-  border-color: var(--gold-color) !important;
+  border: 2px solid var(--gold-color) !important;
   color: var(--gold-color) !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
 }
 
 .green-border-btn {
-  border-color: #39ff14 !important;
+  border: 2px solid #39ff14 !important;
   color: #39ff14 !important;
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.3);
 }
 
 .cyan-border-btn {
-  border-color: var(--neon-cyan) !important;
+  border: 2px solid var(--neon-cyan) !important;
   color: var(--neon-cyan) !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
 }
 
 /* Quests & Badges Modal Styling */
