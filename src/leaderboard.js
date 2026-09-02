@@ -2,10 +2,13 @@
 
 export class LeaderboardManager {
   constructor() {
-    this.scores = this.loadScores();
     this.tableBody = document.getElementById('leaderboard-rows');
-    this.supabaseUrl = 'https://mock-supabase-final-orbit.supabase.co'; // Cloud API endpoint
+    this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+    this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+    this.scores = this.loadScores();
     this.render();
+    this.fetchFromSupabase();
   }
 
   loadScores() {
@@ -27,28 +30,61 @@ export class LeaderboardManager {
     try {
       localStorage.setItem('final_orbit_leaderboard', JSON.stringify(this.scores));
     } catch (e) {}
-
-    // Cloud Supabase Sync Attempt
-    this.syncToSupabase();
     this.render();
   }
 
-  async syncToSupabase() {
+  async fetchFromSupabase() {
+    if (!this.supabaseUrl || !this.supabaseAnonKey) return;
+
     try {
-      // Mock Supabase Cloud API call
-      fetch(`${this.supabaseUrl}/rest/v1/leaderboard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.scores[0] || {})
-      }).catch(() => {});
-    } catch (e) {}
+      const res = await fetch(`${this.supabaseUrl}/rest/v1/leaderboard?select=name,score,wave&order=score.desc&limit=10`, {
+        method: 'GET',
+        headers: {
+          'apikey': this.supabaseAnonKey,
+          'Authorization': `Bearer ${this.supabaseAnonKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          this.scores = data;
+          this.saveScores();
+        }
+      }
+    } catch (e) {
+      console.warn('Supabase fetch fallback:', e);
+    }
   }
 
-  addScore(score, wave, name = 'PILOT_ONE') {
-    this.scores.push({ name, score, wave });
+  async syncToSupabase(entry) {
+    if (!this.supabaseUrl || !this.supabaseAnonKey) return;
+
+    try {
+      await fetch(`${this.supabaseUrl}/rest/v1/leaderboard`, {
+        method: 'POST',
+        headers: {
+          'apikey': this.supabaseAnonKey,
+          'Authorization': `Bearer ${this.supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(entry)
+      });
+    } catch (e) {
+      console.warn('Supabase sync error:', e);
+    }
+  }
+
+  addScore(score, wave, name = 'PILOT_RAZA') {
+    const entry = { name, score, wave };
+    this.scores.push(entry);
     this.scores.sort((a, b) => b.score - a.score);
     this.scores = this.scores.slice(0, 10);
+
     this.saveScores();
+    this.syncToSupabase(entry);
   }
 
   render() {
