@@ -13,6 +13,7 @@ class SoundManager {
     this.bpm = 120;
 
     this.isLowHealth = false;
+    this.laserShotCount = 0;
 
     this.bassScale = [110, 110, 130.81, 146.83, 110, 164.81];
     this.leadScale = [220, 261.63, 293.66, 329.63, 392.00, 440.00];
@@ -71,6 +72,13 @@ class SoundManager {
       gain.gain.setValueAtTime(0.35, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start(now);
@@ -116,8 +124,9 @@ class SoundManager {
 
     // Apply Low-Pass Filter if Low Health!
     let dest = this.ctx.destination;
+    let filter = null;
     if (this.isLowHealth) {
-      const filter = this.ctx.createBiquadFilter();
+      filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(350, now);
       filter.connect(this.ctx.destination);
@@ -133,6 +142,14 @@ class SoundManager {
 
       gain.gain.setValueAtTime(0.04, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + stepDuration * 2);
+
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+          if (filter) filter.disconnect();
+        } catch (e) {}
+      };
 
       osc.connect(gain);
       gain.connect(dest);
@@ -150,6 +167,13 @@ class SoundManager {
       gain.gain.setValueAtTime(0.02, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + stepDuration);
 
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
       osc.connect(gain);
       gain.connect(dest);
       osc.start(now);
@@ -165,6 +189,10 @@ class SoundManager {
     if (this.muted) return;
     this.ensureContext();
     if (!this.ctx) return;
+
+    // Throttle laser audio so it only plays every 3rd shot to conserve CPU & memory
+    this.laserShotCount++;
+    if (this.laserShotCount % 3 !== 0) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -185,6 +213,13 @@ class SoundManager {
       gain.gain.setValueAtTime(0.1, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     }
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -208,6 +243,13 @@ class SoundManager {
     gain.gain.setValueAtTime(0.08, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
+
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start(now);
@@ -229,6 +271,13 @@ class SoundManager {
 
     gain.gain.setValueAtTime(0.12, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -252,6 +301,13 @@ class SoundManager {
     gain.gain.setValueAtTime(0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
+
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start(now);
@@ -273,6 +329,13 @@ class SoundManager {
 
     gain.gain.setValueAtTime(0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -307,6 +370,14 @@ class SoundManager {
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
+    whiteNoise.onended = () => {
+      try {
+        whiteNoise.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
+
     whiteNoise.connect(filter);
     filter.connect(gain);
     gain.connect(this.ctx.destination);
@@ -330,6 +401,13 @@ class SoundManager {
 
     gain.gain.setValueAtTime(0.18, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -357,6 +435,13 @@ class SoundManager {
       gain.gain.setValueAtTime(0.1, noteTime);
       gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.07);
 
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start(noteTime);
@@ -379,6 +464,13 @@ class SoundManager {
 
     gain.gain.setValueAtTime(0.4, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -409,6 +501,13 @@ class SoundManager {
       gain.gain.setValueAtTime(0.15, noteTime);
       gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.2);
 
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          gain.disconnect();
+        } catch (e) {}
+      };
+
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
@@ -419,3 +518,4 @@ class SoundManager {
 }
 
 export const soundManager = new SoundManager();
+

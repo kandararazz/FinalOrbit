@@ -347,3 +347,50 @@ export class NebulaCloud {
     ctx.restore();
   }
 }
+
+export class SolarFlareFog {
+  constructor(x, y, isAcid = true) {
+    this.x = x;
+    this.y = y;
+    this.radius = 110;
+    this.isAcid = isAcid;
+    this.vy = 0.6;
+    this.active = true;
+    this.tickTimer = 0;
+  }
+
+  update(player) {
+    this.y += this.vy;
+    const dx = this.x - player.x;
+    const dy = this.y - player.y;
+    if (Math.hypot(dx, dy) < this.radius) {
+      this.tickTimer++;
+      if (this.tickTimer >= 30) {
+        this.tickTimer = 0;
+        player.takeDamage(5); // 5 tick damage per half-second
+      }
+    }
+  }
+
+  isOutOfBounds(height) {
+    return this.y > height + 140;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    const color0 = this.isAcid ? 'rgba(57, 255, 20, 0.25)' : 'rgba(255, 102, 0, 0.25)';
+    const color1 = this.isAcid ? 'rgba(0, 200, 100, 0.05)' : 'rgba(255, 0, 85, 0.05)';
+    const grad = ctx.createRadialGradient(this.x, this.y, 10, this.x, this.y, this.radius);
+    grad.addColorStop(0, color0);
+    grad.addColorStop(0.7, color1);
+    grad.addColorStop(1, 'transparent');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+

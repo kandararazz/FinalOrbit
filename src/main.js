@@ -89,6 +89,44 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Bind Daily Quests & Pilot Badges Modals
+  const questsOpenBtn = document.getElementById('quests-open-btn');
+  const questsCloseBtn = document.getElementById('quests-close-btn');
+  const questsScreen = document.getElementById('quests-screen');
+  const questsTab1 = document.getElementById('quests-tab-1');
+  const questsTab2 = document.getElementById('quests-tab-2');
+  const questsPanel1 = document.getElementById('quests-panel-1');
+  const questsPanel2 = document.getElementById('quests-panel-2');
+
+  if (questsOpenBtn && questsScreen) {
+    questsOpenBtn.addEventListener('click', () => {
+      game.quests.renderUI();
+      questsScreen.classList.remove('hidden');
+    });
+  }
+
+  if (questsCloseBtn && questsScreen) {
+    questsCloseBtn.addEventListener('click', () => {
+      questsScreen.classList.add('hidden');
+    });
+  }
+
+  if (questsTab1 && questsTab2 && questsPanel1 && questsPanel2) {
+    questsTab1.addEventListener('click', () => {
+      questsTab1.classList.add('active');
+      questsTab2.classList.remove('active');
+      questsPanel1.classList.remove('hidden');
+      questsPanel2.classList.add('hidden');
+    });
+    questsTab2.addEventListener('click', () => {
+      questsTab2.classList.add('active');
+      questsTab1.classList.remove('active');
+      questsPanel2.classList.remove('hidden');
+      questsPanel1.classList.add('hidden');
+    });
+  }
+
+
   // Bind Level Editor Modals
   const editorOpenBtn = document.getElementById('editor-open-btn');
   const editorCloseBtn = document.getElementById('editor-close-btn');

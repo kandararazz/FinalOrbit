@@ -127,10 +127,10 @@ export class Bullet {
 
   isOutOfBounds(width, height) {
     return (
-      this.x < -40 ||
-      this.x > width + 40 ||
-      this.y < -40 ||
-      this.y > height + 40
+      this.x < -50 ||
+      this.x > width + 50 ||
+      this.y < -50 ||
+      this.y > height + 50
     );
   }
 

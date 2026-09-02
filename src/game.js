@@ -1,16 +1,17 @@
 // Master Game Engine with 0.5s Death Slow-Mo, Ship Polygon Debris, & Coin Magnetization for FinalOrbit
-import { Starfield } from './starfield.js';
+import { Starfield, changeWaveBackground } from './starfield.js';
 import { Player, SHIP_AVATARS } from './player.js';
 import { Enemy } from './enemy.js';
 import { Bullet } from './bullet.js';
 import { ParticleSystem } from './particles.js';
 import { PowerUp } from './powerup.js';
-import { Asteroid, EnergySpikeMine, BlackHole, NebulaCloud, SweepingLaserGrid } from './hazards.js';
+import { Asteroid, EnergySpikeMine, BlackHole, NebulaCloud, SweepingLaserGrid, SolarFlareFog } from './hazards.js';
 import { soundManager } from './audio.js';
 import { HUDManager } from './hud.js';
 import { ShopManager } from './shop.js';
 import { AugmentManager } from './augments.js';
 import { LeaderboardManager } from './leaderboard.js';
+import { QuestManager } from './quests.js';
 
 export const GAME_STATES = {
   START: 'START',
@@ -20,6 +21,39 @@ export const GAME_STATES = {
   GAME_OVER: 'GAME_OVER',
   VICTORY: 'VICTORY'
 };
+
+let isGameLoopRunning = false;
+
+export function getWaveData(waveNum) {
+  const isBossWave = (waveNum % 10 === 0);
+  const isSwarmWave = (!isBossWave && waveNum % 5 === 0);
+
+  const enemyCount = isBossWave 
+    ? 1 + Math.floor(waveNum / 10) * 2
+    : Math.min(60, 8 + Math.floor(waveNum * 1.4));
+
+  const spawnRate = isSwarmWave 
+    ? 25 
+    : Math.max(30, 85 - Math.floor(waveNum * 1.1));
+
+  const obstacleInterval = Math.max(50, 140 - Math.floor(waveNum * 1.5));
+
+  let enemyTypes = ['stinger'];
+  if (waveNum >= 5) enemyTypes.push('scout');
+  if (waveNum >= 12) enemyTypes.push('dreadnought');
+
+  return {
+    wave: waveNum,
+    isBossWave,
+    isSwarmWave,
+    totalEnemies: enemyCount,
+    spawnRate,
+    obstacleInterval,
+    types: enemyTypes,
+    hpMultiplier: 1 + (waveNum * 0.08),
+    speedMultiplier: Math.min(2.0, 1 + (waveNum * 0.015))
+  };
+}
 
 export class Game {
   constructor(canvas) {
@@ -31,6 +65,7 @@ export class Game {
     this.shop = new ShopManager();
     this.hud = new HUDManager();
     this.leaderboard = new LeaderboardManager();
+    this.quests = new QuestManager(this.shop);
     this.augments = new AugmentManager(this.onPerkSelected.bind(this));
 
     this.starfield = new Starfield(canvas);
@@ -58,7 +93,7 @@ export class Game {
     this.isChronoActive = false;
     this.chronoTimer = 0;
 
-    this.timeScale = 1.0; // Slow-mo scale (0.2 on player death)
+    this.timeScale = 1.0;
     this.hitStopTimer = 0;
 
     this.waveEnemiesToSpawn = [];
@@ -212,7 +247,6 @@ export class Game {
     this.canvas.addEventListener('touchend', stopTouchFlight, { passive: false });
     this.canvas.addEventListener('touchcancel', stopTouchFlight, { passive: false });
 
-    // Dedicated Touch Event Handler binding helper for Virtual On-Screen Buttons
     const bindVirtualBtn = (btnId, action) => {
       const btn = document.getElementById(btnId);
       if (!btn) return;
@@ -412,6 +446,7 @@ export class Game {
     this.hazards = [];
     this.particleSystem.clear();
     this.augments.reset();
+    this.quests.resetRunTracker();
 
     this.player.reset(this.canvas.width, this.canvas.height, this.shop.upgrades);
     this.startWave(this.wave);
@@ -492,67 +527,69 @@ export class Game {
     this.spawnTimer = 0;
     this.waveEnemiesToSpawn = [];
 
-    // State Transition Cleanup: Explicitly clear lingering enemy bullets before spawning the next wave!
+    changeWaveBackground();
+
+    // Clear lingering enemy bullets
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       if (this.bullets[i].isEnemy) this.bullets.splice(i, 1);
     }
     this.shop.saveCoins();
     this.shop.saveWins();
 
-    const biomeIndex = Math.floor((waveNum - 1) / 4) % 5;
-    this.starfield.setBiome(biomeIndex);
     soundManager.setIntensity(waveNum);
-
     this.starfield.setWarp(3.0);
     setTimeout(() => this.starfield.setWarp(1.0), 1200);
+
+    const waveInfo = getWaveData(waveNum);
+    const titleText = waveInfo.isBossWave 
+      ? `⚠️ BOSS WAVE ${waveNum} ⚠️` 
+      : waveInfo.isSwarmWave 
+        ? `🔥 SWARM WAVE ${waveNum} 🔥` 
+        : `WAVE ${waveNum}`;
 
     this.particleSystem.addFloatingText(
       this.canvas.width / 2,
       this.canvas.height / 2 - 50,
-      `WAVE ${waveNum}`,
-      '#00f0ff',
+      titleText,
+      waveInfo.isBossWave ? '#ff0055' : waveInfo.isSwarmWave ? '#ffea00' : '#00f0ff',
       30
     );
 
-    if (waveNum >= 3 && Math.random() < 0.35) {
-      this.hazards.push(new SweepingLaserGrid(this.canvas.width, Math.random() * (this.canvas.width - 200) + 100));
-    }
-
-    if (Math.random() < 0.65) {
-      for (let i = 0; i < Math.min(6, 2 + Math.floor(waveNum / 6)); i++) {
-        const hx = Math.random() * (this.canvas.width - 80) + 40;
-        const hy = -40 - i * 55;
-        if (Math.random() < 0.5) {
-          this.hazards.push(new Asteroid(hx, hy));
-        } else {
-          this.hazards.push(new EnergySpikeMine(hx, hy));
+    // Random Sector Environmental Hazards
+    if (Math.random() < 0.40) {
+      const hazardType = Math.random();
+      if (hazardType < 0.35) {
+        // Solar Flare / Acid Fog
+        this.hazards.push(new SolarFlareFog(this.canvas.width * (0.2 + Math.random() * 0.6), -80, true));
+        this.particleSystem.addFloatingText(this.canvas.width / 2, 120, '⚠️ ACID FOG DETECTED ⚠️', '#39ff14', 20);
+      } else if (hazardType < 0.70) {
+        // Black Hole Singularity
+        this.hazards.push(new BlackHole(this.canvas.width * (0.3 + Math.random() * 0.4), -60));
+        this.particleSystem.addFloatingText(this.canvas.width / 2, 120, '⚠️ BLACK HOLE SINGULARITY ⚠️', '#a000ff', 20);
+      } else {
+        // Asteroid Storm barrage
+        this.particleSystem.addFloatingText(this.canvas.width / 2, 120, '⚠️ ASTEROID STORM INCOMING ⚠️', '#ff6600', 22);
+        for (let i = 0; i < 8; i++) {
+          this.hazards.push(new Asteroid(Math.random() * (this.canvas.width - 60) + 30, -50 - i * 45));
         }
       }
     }
 
-    if (waveNum % 5 === 0) {
-      this.waveEnemiesToSpawn.push({ type: 'boss', delay: 60 });
-    } else {
-      const droneCount = Math.min(25, 4 + Math.floor(waveNum * 1.2));
-      const scoutCount = Math.min(18, Math.floor(waveNum * 1.0));
-      const stingerCount = Math.min(15, Math.floor(waveNum * 0.9));
-      const anchorCount = Math.min(8, Math.floor(waveNum / 2.5));
-      const acidSpitterCount = Math.min(12, Math.floor(waveNum / 2.0));
+    if (waveNum >= 3 && Math.random() < 0.30) {
+      this.hazards.push(new SweepingLaserGrid(this.canvas.width, Math.random() * (this.canvas.width - 200) + 100));
+    }
 
-      for (let i = 0; i < droneCount; i++) {
-        this.waveEnemiesToSpawn.push({ type: 'drone', delay: i * 25 });
+    if (waveInfo.isBossWave) {
+      this.waveEnemiesToSpawn.push({ type: 'boss', delay: 40 });
+      for (let b = 0; b < Math.floor(waveNum / 10); b++) {
+        this.waveEnemiesToSpawn.push({ type: 'scout', delay: 100 + b * 60 });
       }
-      for (let i = 0; i < scoutCount; i++) {
-        this.waveEnemiesToSpawn.push({ type: 'scout', delay: 40 + i * 35 });
-      }
-      for (let i = 0; i < stingerCount; i++) {
-        this.waveEnemiesToSpawn.push({ type: 'stinger', delay: 70 + i * 30 });
-      }
-      for (let i = 0; i < anchorCount; i++) {
-        this.waveEnemiesToSpawn.push({ type: 'anchor', delay: 120 + i * 60 });
-      }
-      for (let i = 0; i < acidSpitterCount; i++) {
-        this.waveEnemiesToSpawn.push({ type: 'acid_spitter', delay: 150 + i * 45 });
+    } else {
+      const count = waveInfo.totalEnemies;
+      for (let i = 0; i < count; i++) {
+        const typeIndex = Math.floor(Math.random() * waveInfo.types.length);
+        const enemyType = waveInfo.types[typeIndex];
+        this.waveEnemiesToSpawn.push({ type: enemyType, delay: i * waveInfo.spawnRate });
       }
     }
   }
@@ -561,6 +598,7 @@ export class Game {
     if (this.player.bombs <= 0) return;
 
     this.player.bombs--;
+    this.quests.trackEvent('bomb_used', 1, this.wave);
     soundManager.playBomb();
     this.addScreenShake(22);
     if ('vibrate' in navigator) navigator.vibrate(15);
@@ -604,6 +642,8 @@ export class Game {
       enemy.type === 'boss' ? 2.5 : 1
     );
 
+    this.quests.trackEvent(enemy.type === 'boss' ? 'boss_kill' : enemy.type === 'stinger' ? 'stinger_kill' : 'enemy_kill', 1, this.wave);
+
     if (enemy.isGlitch && enemy.type !== 'drone') {
       this.enemies.push(new Enemy(enemy.x - 15, enemy.y, 'drone', this.wave));
       this.enemies.push(new Enemy(enemy.x + 15, enemy.y, 'drone', this.wave));
@@ -626,7 +666,6 @@ export class Game {
     this.particleSystem.addFloatingText(enemy.x, enemy.y, `+${pts}`, '#ffea00');
     this.combo++;
 
-    // Defeated enemies drop glowing yellow/gold circular coin particles!
     const scrapCount = (enemy.type === 'boss' ? 12 : 2) * (this.augments.activePerks.scrapMagnate ? 2 : 1);
     for (let s = 0; s < scrapCount; s++) {
       const sx = enemy.x + (Math.random() - 0.5) * 30;
@@ -686,7 +725,6 @@ export class Game {
           }
 
           if (this.rectIntersect(bullet.getBounds(), enemy.getBounds())) {
-            // Overcharged Coils perk: Bullets pierce through 1 additional enemy!
             if (!bullet.piercing && !this.augments.activePerks.overchargedCoils) bullet.active = false;
             this.particleSystem.createSparks(bullet.x, bullet.y, bullet.color, 6);
 
@@ -703,6 +741,9 @@ export class Game {
               if (!bullet.piercing) bullet.active = false;
               const destroyed = hz.takeDamage(bullet.damage);
               if (destroyed) {
+                if (hz instanceof Asteroid) {
+                  this.quests.trackEvent('asteroid_shatter', 1, this.wave);
+                }
                 const points = hz.scoreValue || 25;
                 this.score += points;
                 this.hud.updateScore(this.score);
@@ -722,11 +763,11 @@ export class Game {
         const dist = Math.hypot(bullet.x - this.player.x, bullet.y - this.player.y);
 
         if (dist < bRadius + pRadius || this.rectIntersect(bullet.getBounds(), playerBounds)) {
-          bullet.active = false; // Vanish laser projectile immediately on impact
+          bullet.active = false;
           this.particleSystem.createSparks(bullet.x, bullet.y, '#ff0055', 8);
 
           const result = this.player.takeDamage(bullet.damage || 15);
-          this.hud.update(this); // Force HUD health/shield bar sync immediately on hit!
+          this.hud.update(this);
 
           if (result === 'HEALTH_DAMAGED' || result === 'DESTROYED') {
             this.addScreenShake(8);
@@ -745,13 +786,11 @@ export class Game {
       }
     }
 
-    // Player vs Sharp Hazard Obstacles & Sweeping Laser Grid
     for (let hIdx = this.hazards.length - 1; hIdx >= 0; hIdx--) {
       const hz = this.hazards[hIdx];
       if (!hz.active) continue;
 
       if (hz instanceof SweepingLaserGrid) {
-        // Point-to-line-segment distance check for continuous beam lasers!
         const pX = this.player.x;
         const pY = this.player.y;
         const pRad = this.player.width * 0.35;
@@ -767,7 +806,7 @@ export class Game {
           const result = this.player.takeDamage(20);
           this.particleSystem.createSparks(pX, hz.y, '#ff0055', 6);
           this.addScreenShake(10);
-          this.hud.update(this); // Force HUD update immediately!
+          this.hud.update(this);
 
           if (result === 'DESTROYED') {
             this.handlePlayerGameOver();
@@ -787,7 +826,7 @@ export class Game {
             this.particleSystem.createSparks(this.player.x, this.player.y, '#ffea00', 10);
             this.addScreenShake(12);
             soundManager.playHit();
-            this.hud.update(this, true); // Force HUD real-time update on hit!
+            this.hud.update(this, true);
 
             const textLabel = result === 'OBSTACLE_SHIELD_SHATTER' ? '-25 SHIELD' : '-30 HEALTH';
             const textColor = result === 'OBSTACLE_SHIELD_SHATTER' ? '#00f0ff' : '#ff0055';
@@ -815,7 +854,6 @@ export class Game {
       }
     }
 
-    // Magnetize coins smoothly when player ship comes within 100px!
     this.powerups.forEach(p => {
       if (!p.active) return;
       const dist = Math.hypot(this.player.x - p.x, this.player.y - p.y);
@@ -837,6 +875,7 @@ export class Game {
         if (p.type === 'scrap') {
           this.scrapCollected += 10;
           this.shop.addScrap(10);
+          this.quests.trackEvent('coin_pickup', 10, this.wave);
           if ('vibrate' in navigator) navigator.vibrate(15);
         } else if (p.type === 'nano') {
           this.player.heal(this.player.maxHealth * 0.25);
@@ -884,13 +923,10 @@ export class Game {
     soundManager.playGameOver();
     const avatarInfo = SHIP_AVATARS[this.player.equippedAvatar] || SHIP_AVATARS.apex_viper;
 
-    // Trigger 0.5s slow-motion effect (timeScale = 0.2)
     this.timeScale = 0.2;
-
-    // Break player ship into 5-8 spinning polygon fragments with smoke trails & 35+ glowing neon particles!
     this.particleSystem.createShipDebris(this.player.x, this.player.y, avatarInfo.color);
     this.addScreenShake(30);
-    this.triggerHitStop(4); // 50ms freeze frame
+    this.triggerHitStop(4);
 
     setTimeout(() => {
       this.state = GAME_STATES.GAME_OVER;
@@ -899,7 +935,7 @@ export class Game {
       this.hud.showGameOver(this.score, this.wave, this.scrapCollected);
       this.leaderboard.addScore(this.score, this.wave);
       document.getElementById('game-over-screen').classList.remove('hidden');
-    }, 1000); // 1-second delay before showing Game Over overlay!
+    }, 1000);
   }
 
   update(dt) {
@@ -908,7 +944,6 @@ export class Game {
       return;
     }
 
-    // Apply timeScale for slow-motion effect!
     const speedMult = (this.isChronoActive ? 0.25 : 1.0) * this.timeScale;
     this.starfield.update(dt * speedMult);
 
@@ -973,26 +1008,24 @@ export class Game {
         }
       }
 
-      // Wave Clear Check -> Award +1 Win immediately & update HUD!
       if (this.waveEnemiesToSpawn.length === 0 && this.enemies.length === 0 && this.hazards.length === 0) {
         this.waveInProgress = false;
 
         this.shop.addWin(1);
+        this.quests.trackEvent('wave_clear', 1, this.wave);
         this.hud.showWaveBanner(`WAVE ${this.wave} CLEARED! +1 WIN`);
 
         if (this.wave === 50 && !this.endlessMode) {
-          // Final Victory! (Wave 50 Complete)
           setTimeout(() => {
-            this.shop.addScrap(500); // +500 Coins Bonus!
-            this.shop.addWin(5); // +5 Wins Bonus!
+            this.shop.addScrap(500);
+            this.shop.addWin(5);
             this.state = GAME_STATES.VICTORY;
             soundManager.stopAdaptiveMusic();
             this.hud.showVictory(this.score, this.shop.wins, this.scrapCollected);
           }, 1800);
         } else {
-          // Transition to next wave after 2 seconds!
           setTimeout(() => {
-            if (this.wave % 3 === 0) {
+            if (this.wave % 3 === 0 || (this.endlessMode && this.wave % 5 === 0)) {
               this.state = GAME_STATES.PERK_DRAFT;
               soundManager.stopAdaptiveMusic();
               this.augments.triggerPerkDraft();
@@ -1008,6 +1041,8 @@ export class Game {
       const hz = this.hazards[i];
       if (hz instanceof BlackHole) {
         hz.update(this.player, this.enemies, this.bullets);
+      } else if (hz instanceof SolarFlareFog) {
+        hz.update(this.player);
       } else {
         hz.update(this.player);
       }
@@ -1089,9 +1124,13 @@ export class Game {
   }
 
   run() {
-    requestAnimationFrame((ts) => {
-      this.lastTime = ts;
-      requestAnimationFrame(this.loop.bind(this));
-    });
+    if (!isGameLoopRunning) {
+      isGameLoopRunning = true;
+      requestAnimationFrame((ts) => {
+        this.lastTime = ts;
+        requestAnimationFrame(this.loop.bind(this));
+      });
+    }
   }
 }
+

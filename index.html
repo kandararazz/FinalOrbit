@@ -152,9 +152,14 @@
 
     <!-- Start Screen Overlay -->
     <div id="start-screen" class="overlay-screen active">
-      <div class="screen-content glow-panel">
-        <h1 class="game-title">Final<span class="accent-text">Orbit</span></h1>
-        <p class="game-subtitle">ULTIMATE CYBERNETIC ARCADE SHOOTER</p>
+      <div class="screen-content glow-panel cyber-menu-frame">
+        <div class="cyber-bracket bracket-tl"></div>
+        <div class="cyber-bracket bracket-tr"></div>
+        <div class="cyber-bracket bracket-bl"></div>
+        <div class="cyber-bracket bracket-br"></div>
+
+        <h1 class="game-title neon-title">VOID <span class="cyan-glow">STINGER</span></h1>
+        <p class="game-subtitle hazard-subtitle">50 BIO-HAZARD WAVES</p>
         <p class="author-tagline">Created by Raza</p>
 
         <div class="start-stats">
@@ -164,11 +169,12 @@
         </div>
 
         <div class="menu-actions">
-          <button id="start-btn" class="arcade-btn glow-btn">ENGAGE MISSION</button>
+          <button id="start-btn" class="arcade-btn glow-btn launch-btn">▶ LAUNCH MISSION</button>
           <div class="button-row">
-            <button id="shop-open-btn" class="arcade-btn secondary-btn">🛠️ HANGAR / AVATARS</button>
+            <button id="shop-open-btn" class="arcade-btn secondary-btn gold-border-btn">🛸 HANGAR & UPGRADES</button>
+            <button id="quests-open-btn" class="arcade-btn secondary-btn green-border-btn">📜 DAILY BOUNTIES</button>
+            <button id="leaderboard-open-btn" class="arcade-btn secondary-btn cyan-border-btn">🏆 LEADERBOARD</button>
             <button id="editor-open-btn" class="arcade-btn secondary-btn">🗺️ LEVEL EDITOR</button>
-            <button id="leaderboard-open-btn" class="arcade-btn secondary-btn">🏆 LEADERBOARD</button>
           </div>
         </div>
 
@@ -187,6 +193,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Daily Quests & Pilot Achievements Modal -->
+    <div id="quests-screen" class="overlay-screen hidden">
+      <div class="screen-content glow-panel wide-panel">
+        <h2 class="screen-title gold-text">DAILY BOUNTIES & PILOT BADGES</h2>
+        <p class="screen-desc">24-HOUR RESET BOUNTIES AND PILOT ACHIEVEMENTS</p>
+
+        <div class="quests-tabs">
+          <button id="quests-tab-1" class="tab-btn active">DAILY BOUNTIES</button>
+          <button id="quests-tab-2" class="tab-btn">PILOT BADGES</button>
+        </div>
+
+        <div id="quests-panel-1" class="quests-panel">
+          <div id="quests-list-container" class="quests-list"></div>
+        </div>
+
+        <div id="quests-panel-2" class="quests-panel hidden">
+          <div id="badges-list-container" class="badges-grid"></div>
+        </div>
+
+        <button id="quests-close-btn" class="arcade-btn glow-btn margin-top-20">BACK TO BASE</button>
+      </div>
+    </div>
+
 
     <!-- Hangar Shop Modal -->
     <div id="shop-screen" class="overlay-screen hidden">
