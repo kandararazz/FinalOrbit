@@ -1225,9 +1225,22 @@ canvas#editor-canvas {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.leaderboard-table tr:first-child td {
+.leaderboard-table tr.rank-1 td {
   color: var(--gold-color);
   font-weight: 800;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.leaderboard-table tr.rank-2 td {
+  color: var(--neon-cyan);
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.leaderboard-table tr.rank-3 td {
+  color: var(--neon-yellow);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 234, 0, 0.5);
 }
 
 /* Arcade Buttons */
