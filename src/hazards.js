@@ -43,8 +43,13 @@ export class Asteroid {
     this.rot += this.rotSpeed;
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 60;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 60 ||
+      this.y < -200 ||
+      this.x < -150 ||
+      this.x > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {
@@ -129,8 +134,13 @@ export class EnergySpikeMine {
     this.rot += this.rotSpeed;
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 60;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 60 ||
+      this.y < -200 ||
+      this.x < -150 ||
+      this.x > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {
@@ -215,8 +225,13 @@ export class SweepingLaserGrid {
     this.y += this.vy;
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 40;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 40 ||
+      this.y < -100 ||
+      this.gapX < -150 ||
+      this.gapX > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {
@@ -274,8 +289,13 @@ export class BlackHole {
     });
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 80;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 80 ||
+      this.y < -200 ||
+      this.x < -150 ||
+      this.x > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {
@@ -328,8 +348,13 @@ export class NebulaCloud {
     }
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 100;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 100 ||
+      this.y < -200 ||
+      this.x < -150 ||
+      this.x > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {
@@ -372,8 +397,13 @@ export class SolarFlareFog {
     }
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 140;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 140 ||
+      this.y < -200 ||
+      this.x < -150 ||
+      this.x > (width || 1000) + 150
+    );
   }
 
   draw(ctx) {

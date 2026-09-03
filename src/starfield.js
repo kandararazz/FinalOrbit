@@ -42,12 +42,9 @@ export const backgroundState = {
 };
 
 export function changeWaveBackground() {
-  let nextTheme;
-  do {
-    nextTheme = SECTOR_THEMES[Math.floor(Math.random() * SECTOR_THEMES.length)];
-  } while (nextTheme === backgroundState.currentTheme && SECTOR_THEMES.length > 1);
-
-  backgroundState.currentTheme = nextTheme;
+  const currentIndex = SECTOR_THEMES.indexOf(backgroundState.currentTheme);
+  const nextIndex = (currentIndex + 1 + Math.floor(Math.random() * (SECTOR_THEMES.length - 1))) % SECTOR_THEMES.length;
+  backgroundState.currentTheme = SECTOR_THEMES[nextIndex];
   backgroundState.nebulaX = 0.2 + Math.random() * 0.6;
   backgroundState.nebulaY = 0.2 + Math.random() * 0.4;
   backgroundState.nebulaRadius = 0.4 + Math.random() * 0.3;

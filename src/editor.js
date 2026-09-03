@@ -132,8 +132,6 @@ export class LevelEditor {
           break;
         case 'boss':
           this.ctx.fillStyle = '#ff0055';
-          this.ctx.shadowBlur = 10;
-          this.ctx.shadowColor = '#ff0055';
           this.ctx.fillRect(-18, -18, 36, 36);
           break;
         case 'drone':

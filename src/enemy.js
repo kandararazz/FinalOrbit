@@ -259,8 +259,13 @@ export class Enemy {
     return bullets;
   }
 
-  isOutOfBounds(height) {
-    return this.y > height + 60;
+  isOutOfBounds(width, height) {
+    return (
+      this.y > height + 60 ||
+      this.y < -200 ||
+      this.x < -100 ||
+      this.x > width + 100
+    );
   }
 
   draw(ctx) {

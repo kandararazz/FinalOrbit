@@ -260,9 +260,10 @@ export class Player {
     if (keys['KeyA'] || keys['ArrowLeft']) moveX -= mult;
     if (keys['KeyD'] || keys['ArrowRight']) moveX += mult;
 
-    if (moveX !== 0 && moveY !== 0) {
-      moveX *= 0.7071;
-      moveY *= 0.7071;
+    if (moveX !== 0 || moveY !== 0) {
+      this.mouseControlActive = false;
+      moveX *= (moveX !== 0 && moveY !== 0) ? 0.7071 : 1;
+      moveY *= (moveX !== 0 && moveY !== 0) ? 0.7071 : 1;
     }
 
     this.vx += moveX * this.speed * 0.25;

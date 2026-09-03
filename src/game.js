@@ -32,9 +32,10 @@ export function getWaveData(waveNum) {
     ? 1 + Math.floor(waveNum / 10) * 2
     : Math.min(60, 9 + Math.floor(waveNum * 1.5));
 
-  const spawnRate = isSwarmWave 
+  const rawSpawnRate = isSwarmWave 
     ? 25 
-    : Math.max(30, 85 - Math.floor(waveNum * 1.1));
+    : (85 - Math.floor(waveNum * 1.1));
+  const spawnRate = Math.max(40, rawSpawnRate);
 
   const obstacleInterval = Math.max(50, 140 - Math.floor(waveNum * 1.5));
 
@@ -50,8 +51,8 @@ export function getWaveData(waveNum) {
     spawnRate,
     obstacleInterval,
     types: enemyTypes,
-    hpMultiplier: 1 + (waveNum * 0.08),
-    speedMultiplier: Math.min(1.5, 1 + (waveNum * 0.008))
+    hpMultiplier: Math.min(3.5, 1 + (waveNum * 0.05)),
+    speedMultiplier: Math.min(1.6, 1 + (waveNum * 0.01))
   };
 }
 
@@ -465,12 +466,17 @@ export class Game {
 
   playCustomWave(jsonConfig) {
     this.startNewGame();
+    this.isCustomWaveMode = true;
     this.waveEnemiesToSpawn = [];
+    this.enemies = [];
+    this.hazards = [];
 
-    if (jsonConfig.entities && Array.isArray(jsonConfig.entities)) {
+    if (jsonConfig && jsonConfig.entities && Array.isArray(jsonConfig.entities)) {
+      const cellW = this.canvas.width / 10;
+      const cellH = this.canvas.height / 10;
       jsonConfig.entities.forEach(item => {
-        const x = item.gridX * (this.canvas.width / 10) + 20;
-        const y = item.gridY * (this.canvas.height / 10) + 20;
+        const x = item.gridX * cellW + cellW / 2;
+        const y = item.gridY * cellH + cellH / 2;
 
         if (item.type === 'asteroid') {
           this.hazards.push(new Asteroid(x, y));
@@ -555,9 +561,9 @@ export class Game {
         this.hazards.push(new BlackHole(this.canvas.width * (0.3 + Math.random() * 0.4), -60));
         this.particleSystem.addFloatingText(this.canvas.width / 2, 120, '⚠️ BLACK HOLE SINGULARITY ⚠️', '#a000ff', 20);
       } else {
-        // Asteroid Storm barrage
+        // Asteroid Storm barrage (max 6 active obstacles)
         this.particleSystem.addFloatingText(this.canvas.width / 2, 120, '⚠️ ASTEROID STORM INCOMING ⚠️', '#ff6600', 22);
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 6; i++) {
           this.hazards.push(new Asteroid(Math.random() * (this.canvas.width - 60) + 30, -50 - i * 45));
         }
       }
@@ -574,10 +580,11 @@ export class Game {
       }
     } else {
       const count = waveInfo.totalEnemies;
+      const safeSpawnRate = Math.max(40, waveInfo.spawnRate);
       for (let i = 0; i < count; i += 3) {
         const typeIndex = Math.floor(Math.random() * waveInfo.types.length);
         const enemyType = waveInfo.types[typeIndex];
-        const groupDelay = (i / 3) * waveInfo.spawnRate;
+        const groupDelay = (i / 3) * safeSpawnRate;
         const groupBaseX = Math.random() * (this.canvas.width - 200) + 100;
         
         // 3 Attackers coming together in a synchronized trio squad formation!
@@ -638,9 +645,11 @@ export class Game {
 
     this.quests.trackEvent(enemy.type === 'boss' ? 'boss_kill' : enemy.type === 'stinger' ? 'stinger_kill' : 'enemy_kill', 1, this.wave);
 
-    if (enemy.isGlitch && enemy.type !== 'drone') {
+    if (enemy.isGlitch && enemy.type !== 'drone' && this.enemies.length < 15) {
       this.enemies.push(new Enemy(enemy.x - 15, enemy.y, 'drone', this.wave));
-      this.enemies.push(new Enemy(enemy.x + 15, enemy.y, 'drone', this.wave));
+      if (this.enemies.length < 15) {
+        this.enemies.push(new Enemy(enemy.x + 15, enemy.y, 'drone', this.wave));
+      }
     }
 
     this.recentKillsCount++;
@@ -992,14 +1001,36 @@ export class Game {
 
     if (this.waveInProgress) {
       this.spawnTimer += speedMult;
+      const spawnedThisFrameX = [];
       for (let i = this.waveEnemiesToSpawn.length - 1; i >= 0; i--) {
+        if (this.enemies.length >= 15) break;
         const item = this.waveEnemiesToSpawn[i];
         if (this.spawnTimer >= item.delay) {
           const baseX = item.baseX !== undefined ? item.baseX : (Math.random() * (this.canvas.width - 160) + 80);
           const offsetX = item.offsetX || 0;
-          const spawnX = Math.max(30, Math.min(this.canvas.width - 30, baseX + offsetX));
+          let spawnX = Math.max(30, Math.min(this.canvas.width - 30, baseX + offsetX));
+
+          // Enforce minimum 50px distance between enemy spawns on same frame / near top
+          let validX = false;
+          let attempts = 0;
+          while (!validX && attempts < 10) {
+            validX = true;
+            const checkList = [...spawnedThisFrameX, ...this.enemies.filter(e => e.y < 100).map(e => e.x)];
+            for (const existingX of checkList) {
+              if (Math.abs(spawnX - existingX) < 50) {
+                spawnX = Math.max(30, Math.min(this.canvas.width - 30, spawnX + (Math.random() > 0.5 ? 55 : -55)));
+                validX = false;
+                break;
+              }
+            }
+            attempts++;
+          }
+          spawnedThisFrameX.push(spawnX);
+
+          // Add randomized initial Y offset so enemies never overlap into a single clump
+          const initialY = -40 - (Math.random() * 60);
           const isGlitch = Math.random() < 0.15;
-          this.enemies.push(new Enemy(spawnX, -40, item.type, this.wave, isGlitch));
+          this.enemies.push(new Enemy(spawnX, initialY, item.type, this.wave, isGlitch));
           this.waveEnemiesToSpawn.splice(i, 1);
         }
       }
@@ -1007,28 +1038,50 @@ export class Game {
       if (this.waveEnemiesToSpawn.length === 0 && this.enemies.length === 0 && this.hazards.length === 0) {
         this.waveInProgress = false;
 
-        this.shop.addWin(1);
-        this.quests.trackEvent('wave_clear', 1, this.wave);
-        this.hud.showWaveBanner(`WAVE ${this.wave} CLEARED! +1 WIN`);
-
-        if (this.wave === 50 && !this.endlessMode) {
+        if (this.isCustomWaveMode) {
+          this.isCustomWaveMode = false;
+          this.hud.showWaveBanner('CUSTOM WAVE CLEARED!');
           setTimeout(() => {
-            this.shop.addScrap(500);
-            this.shop.addWin(5);
-            this.state = GAME_STATES.VICTORY;
-            soundManager.stopAdaptiveMusic();
-            this.hud.showVictory(this.score, this.shop.wins, this.scrapCollected);
-          }, 1800);
-        } else {
-          setTimeout(() => {
-            if (this.wave % 3 === 0 || (this.endlessMode && this.wave % 5 === 0)) {
-              this.state = GAME_STATES.PERK_DRAFT;
-              soundManager.stopAdaptiveMusic();
-              this.augments.triggerPerkDraft();
-            } else {
-              this.startWave(this.wave + 1);
-            }
+            this.returnToHome();
           }, 2000);
+        } else {
+          this.shop.addWin(1);
+          this.quests.trackEvent('wave_clear', 1, this.wave);
+          this.hud.showWaveBanner(`WAVE ${this.wave} CLEARED! +1 WIN`);
+
+          if (this.wave === 50 && !this.endlessMode) {
+            setTimeout(() => {
+              this.shop.addScrap(500);
+              this.shop.addWin(5);
+              this.state = GAME_STATES.VICTORY;
+              soundManager.stopAdaptiveMusic();
+              this.hud.showVictory(this.score, this.shop.wins, this.scrapCollected);
+            }, 1800);
+          } else {
+            setTimeout(() => {
+              if (this.wave % 3 === 0 || (this.endlessMode && this.wave % 5 === 0)) {
+                this.state = GAME_STATES.PERK_DRAFT;
+                soundManager.stopAdaptiveMusic();
+                this.augments.triggerPerkDraft();
+              } else {
+                this.startWave(this.wave + 1);
+              }
+            }, 2000);
+          }
+        }
+      }
+    }
+
+    // Cap active obstacles (asteroids/mines) to a maximum of 6
+    const activeObstacles = this.hazards.filter(h => (h instanceof Asteroid || h instanceof EnergySpikeMine) && h.active);
+    if (activeObstacles.length > 6) {
+      let excessObstacles = activeObstacles.length - 6;
+      for (let i = 0; i < this.hazards.length && excessObstacles > 0; i++) {
+        const h = this.hazards[i];
+        if (h instanceof Asteroid || h instanceof EnergySpikeMine) {
+          this.hazards.splice(i, 1);
+          i--;
+          excessObstacles--;
         }
       }
     }
@@ -1042,7 +1095,7 @@ export class Game {
       } else {
         hz.update(this.player);
       }
-      if (hz.isOutOfBounds(this.canvas.height) || !hz.active) {
+      if (hz.isOutOfBounds(this.canvas.width, this.canvas.height) || !hz.active) {
         this.hazards.splice(i, 1);
       }
     }
@@ -1056,8 +1109,24 @@ export class Game {
         this.bullets.push(...eBullets);
       }
 
-      if (enemy.isOutOfBounds(this.canvas.height) || !enemy.active) {
+      if (enemy.isOutOfBounds(this.canvas.width, this.canvas.height) || !enemy.active) {
         this.enemies.splice(i, 1);
+      }
+    }
+
+    // Cap hostile enemy bullets to max 40. Drop older bullets if array exceeds 40.
+    let hostileCount = 0;
+    for (let i = 0; i < this.bullets.length; i++) {
+      if (this.bullets[i].isEnemy && this.bullets[i].active) hostileCount++;
+    }
+    if (hostileCount > 40) {
+      let excessBullets = hostileCount - 40;
+      for (let i = 0; i < this.bullets.length && excessBullets > 0; i++) {
+        if (this.bullets[i].isEnemy) {
+          this.bullets.splice(i, 1);
+          i--;
+          excessBullets--;
+        }
       }
     }
 
