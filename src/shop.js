@@ -210,16 +210,88 @@ export class ShopManager {
     }
   }
 
+  renderHangarGrid() {
+    const grid = document.getElementById('hangar-grid');
+    if (!grid) return;
+
+    const unlocked = this.loadUnlockedAvatars();
+    const equipped = this.equippedAvatar || this.loadEquippedAvatar();
+
+    const ships = [
+      { id: 'viper', name: 'VIPER INTERCEPTOR', color: '#00f0ff', desc: 'Sleek cyan delta wings with twin plasma thrusters.', cost: 0, icon: '🛸' },
+      { id: 'venom_dart', name: 'VENOM DART', color: '#39ff14', desc: 'Needle hull with rear wing fins & acid thrusters.', cost: 250, icon: '🚀' },
+      { id: 'crimson_titan', name: 'CRIMSON TITAN', color: '#ff0055', desc: 'Heavy split-cockpit dreadnought & dual vents.', cost: 600, icon: '🛰️' },
+      { id: 'void_phantom', name: 'VOID PHANTOM', color: '#a000ff', desc: 'Purple stealth fighter with high-energy core.', cost: 500, icon: '👾' },
+      { id: 'aegis_titan', name: 'AEGIS TITAN', color: '#ff5500', desc: 'Heavy solar armor hull & reinforced shields.', cost: 1000, icon: '🛡️' }
+    ];
+
+    grid.innerHTML = ships.map(ship => {
+      const isOwned = unlocked.includes(ship.id) ||
+        (ship.id.includes('viper') && unlocked.some(a => a.includes('viper'))) ||
+        (ship.id.includes('venom') && unlocked.some(a => a.includes('venom'))) ||
+        (ship.id.includes('crimson') && unlocked.some(a => a.includes('crimson')));
+
+      const isEquipped = (equipped === ship.id) ||
+        (ship.id.includes('viper') && equipped.includes('viper')) ||
+        (ship.id.includes('venom') && equipped.includes('venom')) ||
+        (ship.id.includes('crimson') && equipped.includes('crimson'));
+
+      let btnClass = 'btn-neon cyan';
+      let btnText = 'EQUIP';
+      let disabled = false;
+
+      if (isEquipped) {
+        btnClass = 'btn-neon gold active';
+        btnText = 'EQUIPPED';
+        disabled = true;
+      } else if (!isOwned) {
+        if (this.scrap < ship.cost) {
+          btnClass = 'btn-neon disabled';
+          btnText = `LOCKED (${ship.cost} 🪙)`;
+          disabled = true;
+        } else {
+          btnClass = 'btn-neon gold';
+          btnText = `BUY (${ship.cost} 🪙)`;
+        }
+      }
+
+      return `
+        <div class="hangar-card ${isEquipped ? 'active-card' : ''}" style="border-color: ${ship.color};">
+          <div class="ship-icon-preview" style="text-shadow: 0 0 15px ${ship.color};">${ship.icon}</div>
+          <h3 class="ship-title" style="color: ${ship.color};">${ship.name}</h3>
+          <p class="ship-desc">${ship.desc}</p>
+          <button data-avatar-id="${ship.id}" class="grid-equip-btn ${btnClass}" ${disabled ? 'disabled' : ''}>
+            ${btnText}
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.grid-equip-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const avatarId = e.currentTarget.getAttribute('data-avatar-id');
+        if (avatarId) {
+          this.buyOrEquipAvatar(avatarId);
+          this.renderHangarGrid();
+        }
+      });
+    });
+  }
+
   updateUI() {
     const startScrapEl = document.getElementById('start-scrap');
     const shopScrapEl = document.getElementById('shop-scrap-balance');
+    const hangarCoinsEl = document.getElementById('hangar-coins');
     const winsValEl = document.getElementById('wins-val');
     const startWinsEl = document.getElementById('start-wins');
 
     if (startScrapEl) startScrapEl.textContent = `🪙 ${this.scrap}`;
     if (shopScrapEl) shopScrapEl.textContent = `🪙 ${this.scrap}`;
+    if (hangarCoinsEl) hangarCoinsEl.textContent = `${this.scrap}`;
     if (winsValEl) winsValEl.textContent = `🏆 ${this.wins}`;
     if (startWinsEl) startWinsEl.textContent = `🏆 ${this.wins}`;
+
+    this.renderHangarGrid();
 
     // Stat Upgrades
     ['armor', 'shieldRecovery', 'magnet'].forEach(type => {

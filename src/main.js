@@ -66,11 +66,30 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bind Hangar Shop Modals
+  // Bind Hangar Shop & Hangar Deck Modals
   const shopOpenBtn = document.getElementById('shop-open-btn');
   const shopCloseBtn = document.getElementById('shop-close-btn');
   const gameOverShopBtn = document.getElementById('game-over-shop-btn');
   const shopScreen = document.getElementById('shop-screen');
+
+  const btnHangarOpen = document.getElementById('btn-hangar-open');
+  const btnHangarClose = document.getElementById('btn-hangar-close');
+  const btnHangarBack = document.getElementById('btn-hangar-back');
+  const hangarModal = document.getElementById('hangar-modal');
+
+  if (btnHangarOpen && hangarModal) {
+    btnHangarOpen.addEventListener('click', () => {
+      game.shop.updateUI();
+      hangarModal.style.display = 'flex';
+    });
+  }
+
+  const closeHangar = () => {
+    if (hangarModal) hangarModal.style.display = 'none';
+  };
+
+  if (btnHangarClose) btnHangarClose.addEventListener('click', closeHangar);
+  if (btnHangarBack) btnHangarBack.addEventListener('click', closeHangar);
 
   if (shopOpenBtn && shopScreen) {
     shopOpenBtn.addEventListener('click', () => {
