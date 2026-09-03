@@ -136,7 +136,7 @@ export class LeaderboardManager {
     if (!this.supabaseUrl || !this.supabaseAnonKey) return;
 
     try {
-      const res = await fetch(`${this.supabaseUrl}/rest/v1/leaderboard?select=pilot_name,score,wave&order=score.desc&limit=${MAX_ENTRIES}`, {
+      const res = await fetch(`${this.supabaseUrl}/rest/v1/leaderboard?select=*&order=score.desc&limit=${MAX_ENTRIES}`, {
         method: 'GET',
         headers: {
           'apikey': this.supabaseAnonKey,
@@ -149,9 +149,9 @@ export class LeaderboardManager {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           this.scores = data.map(item => ({
-            name: sanitizeCallsign(item.pilot_name || item.name || 'RAZA'),
+            name: sanitizeCallsign(item.callsign || item.pilot_name || item.name || 'RAZA'),
             score: Number(item.score) || 0,
-            wave: Number(item.wave) || 1
+            wave: Number(item.wave_reached || item.wave) || 1
           }));
           this.saveScores();
         }
@@ -165,6 +165,7 @@ export class LeaderboardManager {
     if (!this.supabaseUrl || !this.supabaseAnonKey) return;
 
     try {
+      const wins = parseInt(localStorage.getItem('void_pilot_wins') || '0', 10);
       await fetch(`${this.supabaseUrl}/rest/v1/leaderboard`, {
         method: 'POST',
         headers: {
@@ -174,9 +175,10 @@ export class LeaderboardManager {
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify({
-          pilot_name: entry.name,
+          callsign: entry.name,
           score: entry.score,
-          wave: entry.wave
+          wave_reached: entry.wave,
+          wins: wins
         })
       });
     } catch (e) {
