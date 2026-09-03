@@ -1012,6 +1012,7 @@ export class Game {
 
     if (this.state === GAME_STATES.PLAYING_1V1 && this.duelManager) {
       this.duelManager.broadcastPlayerState(this.player);
+      this.duelManager.checkDuelHits(this);
     }
 
     const hpPercent = (this.player.health / this.player.maxHealth) * 100;
@@ -1064,7 +1065,7 @@ export class Game {
       }
     }
 
-    if (this.waveInProgress) {
+    if (this.waveInProgress && this.state !== GAME_STATES.PLAYING_1V1) {
       this.spawnTimer += speedMult;
       const spawnedThisFrameX = [];
 
@@ -1281,6 +1282,8 @@ export class Game {
       this.ctx.fill();
 
       this.ctx.restore();
+
+      this.duelManager.drawFloatingBubbles(this.ctx, this.player.x, this.player.y);
     }
 
     this.particleSystem.draw(this.ctx);

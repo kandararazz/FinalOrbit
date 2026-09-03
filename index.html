@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <!-- CRT Scanline Shader Overlay -->
@@ -168,6 +169,27 @@
         </div>
         <div class="bar-outer small-bar">
           <div id="opponent-hp-inner" class="bar-inner health-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- In-Game 1v1 Chat Overlay -->
+    <div id="duel-chat-container" class="hidden">
+      <!-- Recent Messages Fade Stack -->
+      <div id="duel-chat-log"></div>
+
+      <!-- Quick Chat & Text Input Action Bar -->
+      <div id="duel-chat-controls">
+        <button id="btn-quick-chat-toggle" class="chat-toggle-btn" title="Quick Chat Menu">💬</button>
+        <div id="quick-chat-menu" class="quick-chat-menu" style="display: none;">
+          <button class="qc-btn" data-qc="GG! 🤝">GG! 🤝</button>
+          <button class="qc-btn" data-qc="NICE SHOT! 🎯">NICE SHOT! 🎯</button>
+          <button class="qc-btn" data-qc="TOO SLOW! ⚡">TOO SLOW! ⚡</button>
+          <button class="qc-btn" data-qc="WATCH THIS! 💥">WATCH THIS! 💥</button>
+          <button class="qc-btn" data-qc="REMATCH? 🔁">REMATCH? 🔁</button>
+        </div>
+        <div id="custom-chat-input-bar" class="custom-chat-input-bar">
+          <input type="text" id="duel-chat-text-input" class="cyber-chat-input" placeholder="Type chat (Enter)..." maxlength="40" autocomplete="off" spellcheck="false">
         </div>
       </div>
     </div>
@@ -615,6 +637,18 @@
           <button id="btn-duel-create" class="arcade-btn secondary-btn cyan-border-btn mode-action-btn">
             🔑 CREATE PRIVATE ROOM
           </button>
+          <button id="btn-duel-bot" class="arcade-btn secondary-btn gold-border-btn mode-action-btn">
+            🤖 VS BOT DUEL (OFFLINE)
+          </button>
+        </div>
+
+        <div id="bot-difficulty-container" class="bot-difficulty-container margin-top-15 hidden">
+          <span class="callsign-label">SELECT BOT AI PILOT:</span>
+          <div class="input-row margin-top-15" style="justify-content: center;">
+            <button class="qc-btn bot-diff-btn" data-diff="easy">CADET (EASY)</button>
+            <button class="qc-btn bot-diff-btn active" data-diff="medium">REX (MED)</button>
+            <button class="qc-btn bot-diff-btn" data-diff="hard">APEX (HARD)</button>
+          </div>
         </div>
 
         <div class="duel-join-box margin-top-15">
@@ -633,6 +667,68 @@
         <div class="button-row margin-top-20">
           <button id="btn-duel-cancel" class="arcade-btn secondary-btn">[ CANCEL / EXIT ]</button>
           <button id="btn-duel-close" class="close-btn hidden">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Tier Podium Ceremony Modal -->
+    <div id="duel-podium-modal" class="overlay-screen hidden callsign-modal-overlay">
+      <div class="screen-content glow-panel cyber-menu-frame podium-modal-panel">
+        <div class="cyber-bracket bracket-tl"></div>
+        <div class="cyber-bracket bracket-tr"></div>
+        <div class="cyber-bracket bracket-bl"></div>
+        <div class="cyber-bracket bracket-br"></div>
+
+        <h2 id="podium-title" class="screen-title gold-text">🏆 DUEL VICTORY!</h2>
+        <p id="podium-subtitle" class="screen-desc">COMPETITIVE ARENA RANKINGS UPDATED</p>
+
+        <!-- Animated 3-Tier Podium Graphic -->
+        <div class="podium-container margin-top-15">
+          <!-- Position 2 (Silver Striker - Left) -->
+          <div class="podium-step step-2">
+            <div class="podium-avatar" id="podium-avatar-2">⭐</div>
+            <div class="podium-callsign" id="podium-callsign-2">RIVAL</div>
+            <div class="podium-mmr" id="podium-mmr-2">1200 MMR</div>
+            <div class="podium-block block-2">
+              <span class="podium-rank-num">2</span>
+              <span class="podium-rank-title">SILVER STRIKER</span>
+            </div>
+          </div>
+
+          <!-- Position 1 (Gold Vanguard - Center/Highest) -->
+          <div class="podium-step step-1">
+            <div class="crown-icon">👑</div>
+            <div class="podium-avatar" id="podium-avatar-1">🛸</div>
+            <div class="podium-callsign" id="podium-callsign-1">RAZA</div>
+            <div class="podium-mmr" id="podium-mmr-1">1450 MMR</div>
+            <div class="podium-block block-1">
+              <span class="podium-rank-num">1</span>
+              <span class="podium-rank-title">GOLD VANGUARD</span>
+            </div>
+          </div>
+
+          <!-- Position 3 (Bronze Enforcer - Right) -->
+          <div class="podium-step step-3">
+            <div class="podium-avatar" id="podium-avatar-3">🔰</div>
+            <div class="podium-callsign" id="podium-callsign-3">CADET</div>
+            <div class="podium-mmr" id="podium-mmr-3">1050 MMR</div>
+            <div class="podium-block block-3">
+              <span class="podium-rank-num">3</span>
+              <span class="podium-rank-title">BRONZE ENFORCER</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Match Performance Details -->
+        <div class="podium-stats-row margin-top-15">
+          <div class="stat-pill gold-pill" id="podium-reward-coins">+50 COINS</div>
+          <div class="stat-pill cyan-pill" id="podium-reward-mmr">+25 MMR</div>
+          <div class="stat-pill" id="podium-streak">STREAK: 1 🔥</div>
+        </div>
+
+        <div class="button-row margin-top-20">
+          <button id="btn-podium-rematch" class="arcade-btn glow-btn">🔁 REMATCH</button>
+          <button id="btn-podium-home" class="arcade-btn secondary-btn">🏠 RETURN TO BASE</button>
         </div>
       </div>
     </div>

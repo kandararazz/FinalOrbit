@@ -2257,6 +2257,280 @@ canvas#editor-canvas {
   to { transform: rotate(360deg); }
 }
 
+/* In-Game 1v1 Chat Overlay */
+#duel-chat-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1500;
+  overflow: hidden;
+}
+
+#duel-chat-log {
+  position: absolute;
+  left: 12px;
+  bottom: 110px;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.chat-bubble {
+  background: rgba(5, 10, 25, 0.88);
+  border-left: 3px solid #00f0ff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'Rajdhani', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  animation: chatFade 4.5s forwards ease-in-out;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  word-wrap: break-word;
+}
+
+.chat-bubble.opponent {
+  border-left-color: #ff0055;
+}
+
+.chat-sender {
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+#duel-chat-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-toggle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #090e21;
+  border: 2px solid #00f0ff;
+  color: #00f0ff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.chat-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+.quick-chat-menu {
+  position: absolute;
+  bottom: 52px;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #080d1e;
+  border: 1px solid #00f0ff;
+  border-radius: 8px;
+  padding: 8px;
+  width: 165px;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  z-index: 1600;
+}
+
+.qc-btn {
+  background: #111a3b;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  color: #d4f7ff;
+  font-family: 'Rajdhani', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.qc-btn:active, .qc-btn:hover, .qc-btn.active {
+  background: #00f0ff;
+  color: #050814;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.custom-chat-input-bar {
+  display: flex;
+  align-items: center;
+}
+
+.cyber-chat-input {
+  background: rgba(8, 13, 30, 0.9);
+  border: 1px solid #00f0ff;
+  border-radius: 6px;
+  color: #fff;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  width: 150px;
+  outline: none;
+  box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.2);
+}
+
+.cyber-chat-input:focus {
+  border-color: #ffea00;
+  box-shadow: 0 0 12px rgba(255, 234, 0, 0.5), inset 0 0 8px rgba(255, 234, 0, 0.2);
+}
+
+.bot-difficulty-container {
+  background: rgba(5, 10, 25, 0.7);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.bot-diff-btn {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+@keyframes chatFade {
+  0% { opacity: 0; transform: translateY(10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* 3-Tier Podium Ranking Modal Styling */
+.podium-modal-panel {
+  max-width: 520px;
+  text-align: center;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 20px rgba(255, 215, 0, 0.15) !important;
+}
+
+.podium-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  min-height: 210px;
+  margin: 18px 0;
+  position: relative;
+}
+
+.podium-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 145px;
+  transition: all 0.3s ease;
+}
+
+.podium-avatar {
+  font-size: 2.2rem;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
+}
+
+.crown-icon {
+  font-size: 1.8rem;
+  margin-bottom: -6px;
+  animation: pulse-crown 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-crown {
+  from { transform: scale(1); filter: drop-shadow(0 0 5px #ffd700); }
+  to { transform: scale(1.18); filter: drop-shadow(0 0 15px #ffd700); }
+}
+
+.podium-callsign {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.podium-mmr {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  margin-bottom: 6px;
+}
+
+.podium-block {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px 8px 0 0;
+  padding: 8px 4px;
+  box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.block-1 {
+  height: 115px;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.35) 0%, rgba(255, 140, 0, 0.2) 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.5), inset 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.block-2 {
+  height: 90px;
+  background: linear-gradient(180deg, rgba(224, 230, 237, 0.3) 0%, rgba(140, 160, 180, 0.15) 100%);
+  border: 2px solid #e0e6ed;
+  box-shadow: 0 0 20px rgba(224, 230, 237, 0.4), inset 0 0 12px rgba(224, 230, 237, 0.15);
+}
+
+.block-3 {
+  height: 70px;
+  background: linear-gradient(180deg, rgba(205, 127, 50, 0.3) 0%, rgba(130, 75, 25, 0.15) 100%);
+  border: 2px solid #cd7f32;
+  box-shadow: 0 0 15px rgba(205, 127, 50, 0.4), inset 0 0 10px rgba(205, 127, 50, 0.15);
+}
+
+.podium-rank-num {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+
+.podium-rank-title {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.step-1 .podium-rank-num { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+.step-2 .podium-rank-num { color: #e0e6ed; text-shadow: 0 0 10px rgba(224, 230, 237, 0.8); }
+.step-3 .podium-rank-num { color: #cd7f32; text-shadow: 0 0 10px rgba(205, 127, 50, 0.8); }
+
+.podium-stats-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
 
 
 
