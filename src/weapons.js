@@ -46,17 +46,32 @@ export class WeaponSystem {
     this.isOverheated = false;
   }
 
-  shoot(x, y, enemies = [], perks = {}) {
-    if (this.isOverheated || this.fireCooldown > 0) return [];
+  shoot(x, y, enemies = [], perks = {}, isOverdrive = false) {
+    if ((this.isOverheated && !isOverdrive) || this.fireCooldown > 0) return [];
 
-    this.heat += this.heatBuildRate * (perks.heatReduction ? 0.7 : 1.0);
-    if (this.heat >= this.maxHeat) {
-      this.heat = this.maxHeat;
-      this.isOverheated = true;
+    if (isOverdrive) {
+      this.heat = 0;
+      this.isOverheated = false;
+    } else {
+      this.heat += this.heatBuildRate * (perks.heatReduction ? 0.7 : 1.0);
+      if (this.heat >= this.maxHeat) {
+        this.heat = this.maxHeat;
+        this.isOverheated = true;
+      }
     }
 
     const bullets = [];
     const noseY = y - 24;
+
+    if (isOverdrive) {
+      this.fireCooldown = 3;
+      soundManager.playLaser('dual');
+      bullets.push(new Bullet(x - 22, noseY, 0, -18, false, 'railgun', 15, perks));
+      bullets.push(new Bullet(x - 7, noseY, 0, -18, false, 'railgun', 15, perks));
+      bullets.push(new Bullet(x + 7, noseY, 0, -18, false, 'railgun', 15, perks));
+      bullets.push(new Bullet(x + 22, noseY, 0, -18, false, 'railgun', 15, perks));
+      return bullets;
+    }
 
     switch (this.mode) {
       case 'railgun':

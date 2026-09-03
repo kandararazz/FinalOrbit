@@ -1,5 +1,7 @@
 // Projectiles, Missiles, & Chain Lightning for FinalOrbit
 
+import { themeManager } from './theme.js';
+
 export class Bullet {
   constructor(x, y, vx, vy, isEnemy = false, type = 'dual', damage = 10, perks = {}) {
     this.x = x;
@@ -18,12 +20,14 @@ export class Bullet {
       this.damage *= 1.25;
     }
 
+    const activeTheme = themeManager.getTheme();
+
     // Geometry based on type
     switch (this.type) {
       case 'railgun':
         this.width = 18;
         this.height = 42;
-        this.color = '#00f0ff';
+        this.color = activeTheme.laser || '#00f0ff';
         this.piercing = true;
         break;
       case 'missile':
@@ -35,7 +39,7 @@ export class Bullet {
       case 'flak':
         this.width = 12;
         this.height = 12;
-        this.color = '#ff0077';
+        this.color = activeTheme.alarm || '#ff0077';
         this.life = 22; // Short range!
         break;
       case 'tesla':
@@ -46,7 +50,7 @@ export class Bullet {
       case 'spread':
         this.width = 8;
         this.height = 16;
-        this.color = '#ff0077';
+        this.color = activeTheme.accent || '#ff0077';
         break;
       case 'boss_orb':
         this.width = 14;
@@ -63,7 +67,7 @@ export class Bullet {
       default:
         this.width = perks.bigBullets ? 6 : 4;
         this.height = perks.bigBullets ? 20 : 16;
-        this.color = isEnemy ? '#ff2a55' : '#00f0ff';
+        this.color = isEnemy ? (activeTheme.alarm || '#ff2a55') : (activeTheme.laser || '#00f0ff');
         break;
     }
   }

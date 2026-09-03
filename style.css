@@ -2000,6 +2000,264 @@ canvas#editor-canvas {
   box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), inset 0 0 12px rgba(255, 215, 0, 0.2);
 }
 
+/* Pointer Events Isolation & Mobile Touch Safe-Area Insets */
+#hud {
+  pointer-events: none !important;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#hud button, 
+#hud a, 
+.interactive-btn,
+.mobile-bomb-btn,
+.mobile-dash-btn,
+.mobile-header-controls button {
+  pointer-events: auto !important;
+}
+
+.mobile-bomb-btn, .mobile-dash-btn {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mode Switcher Cards on Start Screen */
+.mode-cards-container {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 15px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.mode-card-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  background: rgba(5, 12, 30, 0.85);
+  border: 2px solid var(--neon-cyan);
+  border-radius: 12px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.mode-card-btn:hover, .mode-card-btn:active {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--accent-color);
+  background: rgba(10, 25, 55, 0.95);
+  box-shadow: 0 0 25px var(--accent-color);
+}
+
+.solo-mode-btn {
+  border-color: var(--neon-cyan);
+}
+
+.duel-mode-btn {
+  border-color: #ff0077;
+  box-shadow: 0 0 15px rgba(255, 0, 119, 0.25);
+}
+
+.duel-mode-btn:hover, .duel-mode-btn:active {
+  border-color: #ff0077;
+  box-shadow: 0 0 25px rgba(255, 0, 119, 0.8);
+}
+
+.mode-icon {
+  font-size: 1.8rem;
+  margin-bottom: 6px;
+}
+
+.mode-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.mode-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Visual Styles & Themes Selector in Hangar Modal */
+.theme-selector-section {
+  width: 100%;
+  margin-bottom: 15px;
+  background: rgba(3, 7, 18, 0.6);
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.theme-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  background: rgba(10, 15, 30, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-card:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.theme-card.active {
+  border-color: var(--accent-color);
+  background: rgba(0, 240, 255, 0.12);
+  box-shadow: 0 0 20px var(--accent-color);
+}
+
+.theme-card-header {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.theme-swatch-group {
+  display: flex;
+  gap: 6px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+/* Top Opponent HUD */
+.opponent-hud {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(20, 3, 10, 0.88);
+  border: 2px solid #ff0055;
+  border-radius: 12px;
+  padding: 6px 18px;
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+  pointer-events: none;
+}
+
+.opponent-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ff0055;
+}
+
+.opponent-bars {
+  display: flex;
+  gap: 8px;
+  width: 180px;
+}
+
+.small-bar {
+  flex: 1;
+  height: 8px;
+}
+
+/* 1v1 Duel Lobby Modal */
+.duel-lobby-panel {
+  max-width: 480px;
+  text-align: center;
+  border-color: #ff0077 !important;
+  box-shadow: 0 0 35px rgba(255, 0, 119, 0.5), inset 0 0 15px rgba(255, 0, 119, 0.15) !important;
+}
+
+.duel-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.mode-action-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+}
+
+.duel-join-box {
+  background: rgba(5, 10, 25, 0.7);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.duel-status-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 30px;
+}
+
+.duel-status-text {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--neon-cyan);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.duel-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--neon-cyan);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
 
 
 

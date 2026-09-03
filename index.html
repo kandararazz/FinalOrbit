@@ -156,6 +156,22 @@
       <button id="fullscreen-toggle" class="icon-btn" title="Toggle Fullscreen">⛶</button>
     </div>
 
+    <!-- Top Opponent HUD for 1v1 Duel Arena -->
+    <div id="opponent-hud" class="opponent-hud hidden">
+      <div class="opponent-badge">
+        <span class="opponent-icon">🎯 RIVAL:</span>
+        <span id="opponent-callsign" class="opponent-callsign">RIVAL_PILOT</span>
+      </div>
+      <div class="opponent-bars">
+        <div class="bar-outer small-bar">
+          <div id="opponent-shield-inner" class="bar-inner shield-fill" style="width: 100%;"></div>
+        </div>
+        <div class="bar-outer small-bar">
+          <div id="opponent-hp-inner" class="bar-inner health-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Start Screen Overlay -->
     <div id="start-screen" class="overlay-screen active">
       <div class="screen-content glow-panel cyber-menu-frame">
@@ -186,10 +202,23 @@
         </div>
 
         <div class="menu-actions">
-          <button id="start-btn" class="arcade-btn glow-btn launch-btn">▶ LAUNCH MISSION</button>
-          <div class="button-row">
+          <div class="mode-cards-container">
+            <button id="btn-mode-solo" class="mode-card-btn solo-mode-btn">
+              <span class="mode-icon">🛸</span>
+              <span class="mode-title">SOLO INVASION</span>
+              <span class="mode-sub">50-WAVE OFFLINE CAMPAIGN</span>
+            </button>
+            <button id="btn-mode-duel" class="mode-card-btn duel-mode-btn">
+              <span class="mode-icon">⚡</span>
+              <span class="mode-title">1v1 DUEL ARENA</span>
+              <span class="mode-sub">REALTIME LIVE MULTIPLAYER</span>
+            </button>
+          </div>
+          <button id="start-btn" class="arcade-btn glow-btn launch-btn hidden">▶ LAUNCH MISSION</button>
+
+          <div class="button-row margin-top-15">
             <button id="btn-hangar-open" class="btn-neon gold">🛸 HANGAR DECK</button>
-            <button id="shop-open-btn" class="arcade-btn secondary-btn gold-border-btn">🛸 HANGAR</button>
+            <button id="shop-open-btn" class="arcade-btn secondary-btn gold-border-btn">🛒 SHOP</button>
             <button id="quests-open-btn" class="arcade-btn secondary-btn green-border-btn">📜 BOUNTIES</button>
             <button id="leaderboard-open-btn" class="arcade-btn secondary-btn cyan-border-btn">🏆 RANKINGS</button>
             <button id="editor-open-btn" class="arcade-btn secondary-btn">🗺️ EDITOR</button>
@@ -240,12 +269,52 @@
     <div id="hangar-modal" class="modal-overlay" style="display: none;">
       <div class="hangar-panel glow-panel wide-panel">
         <div class="hangar-header">
-          <h2>SHIP HANGAR</h2>
+          <h2>SHIP HANGAR & VISUAL STYLES</h2>
           <div class="coin-display">COINS: <span id="hangar-coins" class="gold-text">0</span> 🪙</div>
           <button id="btn-hangar-close" class="close-btn">&times;</button>
         </div>
 
+        <!-- Visual Theme Switcher Section -->
+        <div class="theme-selector-section">
+          <h3 class="section-title">🎨 VISUAL STYLES & SKINS</h3>
+          <div class="theme-cards-grid">
+            <div class="theme-card active" data-theme-id="neon_cyber">
+              <div class="theme-card-header">NEON CYBER</div>
+              <div class="theme-swatch-group">
+                <span class="swatch" style="background: #050814;" title="Background"></span>
+                <span class="swatch" style="background: #00f0ff;" title="Accent"></span>
+                <span class="swatch" style="background: #00f0ff;" title="Laser"></span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme-id="synthwave_sunset">
+              <div class="theme-card-header">SYNTHWAVE SUNSET</div>
+              <div class="theme-swatch-group">
+                <span class="swatch" style="background: #100320;" title="Background"></span>
+                <span class="swatch" style="background: #ff0077;" title="Accent"></span>
+                <span class="swatch" style="background: #ffaa00;" title="Laser"></span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme-id="toxic_biohazard">
+              <div class="theme-card-header">TOXIC BIO-HAZARD</div>
+              <div class="theme-swatch-group">
+                <span class="swatch" style="background: #040a06;" title="Background"></span>
+                <span class="swatch" style="background: #39ff14;" title="Accent"></span>
+                <span class="swatch" style="background: #39ff14;" title="Laser"></span>
+              </div>
+            </div>
+            <div class="theme-card" data-theme-id="monochrome_arcade">
+              <div class="theme-card-header">MONOCHROME ARCADE</div>
+              <div class="theme-swatch-group">
+                <span class="swatch" style="background: #0d1a0d;" title="Background"></span>
+                <span class="swatch" style="background: #33ff33;" title="Accent"></span>
+                <span class="swatch" style="background: #33ff33;" title="Laser"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Ship Cards Grid -->
+        <h3 class="section-title margin-top-15">🛸 SHIP FLEET</h3>
         <div id="hangar-grid" class="hangar-grid"></div>
 
         <div class="hangar-footer">
@@ -519,6 +588,51 @@
         <div class="button-row margin-top-20">
           <button id="btn-callsign-confirm" class="arcade-btn glow-btn">[ CONFIRM ]</button>
           <button id="btn-callsign-cancel" class="arcade-btn secondary-btn">[ CANCEL ]</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1v1 Duel Arena Lobby Modal -->
+    <div id="duel-lobby-modal" class="overlay-screen hidden callsign-modal-overlay">
+      <div class="screen-content glow-panel cyber-menu-frame duel-lobby-panel">
+        <div class="cyber-bracket bracket-tl"></div>
+        <div class="cyber-bracket bracket-tr"></div>
+        <div class="cyber-bracket bracket-bl"></div>
+        <div class="cyber-bracket bracket-br"></div>
+
+        <h2 class="screen-title gold-text">⚡ 1v1 DUEL ARENA LOBBY</h2>
+        <p class="screen-desc">REALTIME MULTIPLAYER HEAD-TO-HEAD DOGFIGHT</p>
+
+        <div class="callsign-box margin-top-15">
+          <span class="badge-label">YOUR CALLSIGN:</span>
+          <span id="duel-callsign-display" class="badge-callsign cyan-text">RAZA</span>
+        </div>
+
+        <div class="duel-options-grid margin-top-15">
+          <button id="btn-duel-quick" class="arcade-btn glow-btn mode-action-btn">
+            ⚡ QUICK MATCH
+          </button>
+          <button id="btn-duel-create" class="arcade-btn secondary-btn cyan-border-btn mode-action-btn">
+            🔑 CREATE PRIVATE ROOM
+          </button>
+        </div>
+
+        <div class="duel-join-box margin-top-15">
+          <label for="duel-room-code-input" class="callsign-label">ENTER 4-LETTER ROOM CODE:</label>
+          <div class="input-row">
+            <input type="text" id="duel-room-code-input" class="cyber-input" maxlength="4" placeholder="VOID" autocomplete="off" spellcheck="false">
+            <button id="btn-duel-join" class="arcade-btn secondary-btn small-btn">JOIN ROOM</button>
+          </div>
+        </div>
+
+        <div class="duel-status-container margin-top-15">
+          <div id="duel-spinner" class="duel-spinner hidden"></div>
+          <span id="duel-status-text" class="duel-status-text">SELECT MATCHMAKING OPTION</span>
+        </div>
+
+        <div class="button-row margin-top-20">
+          <button id="btn-duel-cancel" class="arcade-btn secondary-btn">[ CANCEL / EXIT ]</button>
+          <button id="btn-duel-close" class="close-btn hidden">&times;</button>
         </div>
       </div>
     </div>

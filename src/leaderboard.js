@@ -227,3 +227,39 @@ export class LeaderboardManager {
     });
   }
 }
+
+export function getPilotProgress() {
+  let xp = 0;
+  try {
+    const saved = localStorage.getItem('void_pilot_xp');
+    if (saved) xp = parseInt(saved, 10) || 0;
+  } catch (e) {}
+
+  const level = Math.max(1, 1 + Math.floor(Math.sqrt(xp / 100)));
+
+  let rankTitle = 'Space Cadet';
+  let thrusterColor = '#00f0ff';
+
+  if (level >= 50) {
+    rankTitle = 'Galaxy Vanguard';
+    thrusterColor = '#39ff14';
+  } else if (level >= 25) {
+    rankTitle = 'Void Stalker';
+    thrusterColor = '#ffea00';
+  } else if (level >= 10) {
+    rankTitle = 'Sector Enforcer';
+    thrusterColor = '#a000ff';
+  }
+
+  return { xp, level, rankTitle, thrusterColor };
+}
+
+export function addPilotXP(amount) {
+  try {
+    const current = getPilotProgress().xp;
+    const updated = current + amount;
+    localStorage.setItem('void_pilot_xp', updated.toString());
+    return getPilotProgress();
+  } catch (e) {}
+  return getPilotProgress();
+}

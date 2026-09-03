@@ -2,16 +2,28 @@
 import { Game } from './game.js';
 import { LevelEditor } from './editor.js';
 import { soundManager } from './audio.js';
+import { themeManager } from './theme.js';
+import { DuelManager } from './duel.js';
+import { getPilotCallsign } from './leaderboard.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('game-canvas');
   const container = document.getElementById('game-container');
 
   function resizeCanvas() {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    canvas.width = width;
-    canvas.height = height;
+    const rect = container.getBoundingClientRect();
+    const dpr = Math.min(2.0, window.devicePixelRatio || 1.0);
+    const width = rect.width;
+    const height = rect.height;
+
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     if (window.gameInstance) {
       window.gameInstance.resize(width, height);
     }
@@ -21,16 +33,72 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const game = new Game(canvas);
   window.gameInstance = game;
+  const duelManager = new DuelManager(game);
 
   // Level Editor Integration
   const editor = new LevelEditor((customConfig) => {
     game.playCustomWave(customConfig);
   });
 
-  // Bind Start Button
+  // Touch Event Isolation for Virtual Buttons
+  const isolateTouchButtons = () => {
+    const buttonSelectors = [
+      '#mobile-bomb-btn', '#mobile-dash-btn', '#bomb-btn', '#chrono-btn',
+      '#mobile-pause-btn', '#mobile-fullscreen-btn', '#audio-toggle', '#fullscreen-toggle',
+      '.mode-card-btn', '.arcade-btn', '.btn-neon', '.tab-btn', '.theme-card'
+    ];
+
+    buttonSelectors.forEach(selector => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+        }, { passive: false });
+        btn.addEventListener('touchend', (e) => {
+          e.stopPropagation();
+        }, { passive: false });
+      });
+    });
+  };
+
+  isolateTouchButtons();
+
+  // Enforce Callsign Check before Mode Entry
+  const checkCallsignSet = () => {
+    const callsign = getPilotCallsign();
+    if (!callsign || (callsign === 'RAZA' && !localStorage.getItem('void_pilot_callsign'))) {
+      const callsignModal = document.getElementById('callsign-modal');
+      if (callsignModal) {
+        callsignModal.classList.remove('hidden');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Bind Start Screen Mode Switcher Cards
+  const btnModeSolo = document.getElementById('btn-mode-solo');
+  const btnModeDuel = document.getElementById('btn-mode-duel');
   const startBtn = document.getElementById('start-btn');
+
+  if (btnModeSolo) {
+    btnModeSolo.addEventListener('click', () => {
+      if (!checkCallsignSet()) return;
+      soundManager.init();
+      game.startNewGame();
+    });
+  }
+
+  if (btnModeDuel) {
+    btnModeDuel.addEventListener('click', () => {
+      if (!checkCallsignSet()) return;
+      soundManager.init();
+      duelManager.openLobbyModal();
+    });
+  }
+
   if (startBtn) {
     startBtn.addEventListener('click', () => {
+      if (!checkCallsignSet()) return;
       soundManager.init();
       game.startNewGame();
     });
@@ -66,7 +134,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bind Hangar Shop & Hangar Deck Modals
+  // Bind Hangar Deck & Theme Switcher Modals
   const shopOpenBtn = document.getElementById('shop-open-btn');
   const shopCloseBtn = document.getElementById('shop-close-btn');
   const gameOverShopBtn = document.getElementById('game-over-shop-btn');
@@ -80,6 +148,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (btnHangarOpen && hangarModal) {
     btnHangarOpen.addEventListener('click', () => {
       game.shop.updateUI();
+      themeManager.updateUI();
       hangarModal.style.display = 'flex';
     });
   }
@@ -90,6 +159,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
   if (btnHangarClose) btnHangarClose.addEventListener('click', closeHangar);
   if (btnHangarBack) btnHangarBack.addEventListener('click', closeHangar);
+
+  // Bind Theme Cards click events
+  const themeCards = document.querySelectorAll('.theme-card');
+  themeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const themeId = card.getAttribute('data-theme-id');
+      if (themeId) {
+        themeManager.setTheme(themeId);
+        soundManager.playSound('click');
+      }
+    });
+  });
 
   if (shopOpenBtn && shopScreen) {
     shopOpenBtn.addEventListener('click', () => {
@@ -144,7 +225,6 @@ window.addEventListener('DOMContentLoaded', () => {
       questsPanel1.classList.add('hidden');
     });
   }
-
 
   // Bind Level Editor Modals
   const editorOpenBtn = document.getElementById('editor-open-btn');
@@ -246,7 +326,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (victoryEndlessBtn && victoryScreen) {
     victoryEndlessBtn.addEventListener('click', () => {
       victoryScreen.classList.add('hidden');
-      game.startNewGame(true); // Start Endless Mode run!
+      game.startNewGame(true);
     });
   }
 
@@ -312,8 +392,9 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(resizeCanvas, 100);
   });
 
-  // Initial sync of callsign displays
+  // Initial sync of callsign displays and theme UI
   game.leaderboard.syncInputFields();
+  themeManager.updateUI();
 
   // Run render loop
   game.run();

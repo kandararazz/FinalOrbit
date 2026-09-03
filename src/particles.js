@@ -258,7 +258,7 @@ export class ParticleSystem {
       }
     }
 
-    // Hard-cap active particle count strictly at max 150
+    // Hard-cap active particle count strictly at max 80 elements to preserve 60 FPS
     if (this.particles.length > this.maxParticles) {
       const overflow = this.particles.splice(0, this.particles.length - this.maxParticles);
       overflow.forEach(p => this.particlePool.push(p));

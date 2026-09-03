@@ -1,6 +1,8 @@
 // 3-Layer Parallax Starfield Engine for FinalOrbit
 // Layers move at exact speeds: Layer 1 (0.5px/frame), Layer 2 (1.5px/frame), Layer 3 (3.0px/frame)
 
+import { themeManager } from './theme.js';
+
 export const SECTOR_THEMES = [
   {
     name: 'ACID NEBULA',
@@ -102,13 +104,21 @@ export class Starfield {
     });
   }
 
+  triggerHyperspaceWarp(duration = 1.5) {
+    this.targetWarp = 8.0;
+    setTimeout(() => {
+      this.targetWarp = 1.0;
+    }, duration * 1000);
+  }
+
   draw(ctx) {
-    const theme = backgroundState.currentTheme;
+    const activeTheme = themeManager.getTheme();
+    const sectorTheme = backgroundState.currentTheme;
     const w = this.canvas.width;
     const h = this.canvas.height;
 
-    // 1. Base Space Void
-    ctx.fillStyle = theme.bg;
+    // 1. Base Space Void (dynamic from active visual theme)
+    ctx.fillStyle = activeTheme.bg || sectorTheme.bg;
     ctx.fillRect(0, 0, w, h);
 
     // 2. Glowing Radial Nebula Cloud
@@ -117,22 +127,23 @@ export class Starfield {
     const nR = Math.max(w, h) * backgroundState.nebulaRadius;
 
     const grad = ctx.createRadialGradient(nX, nY, 10, nX, nY, nR);
-    grad.addColorStop(0, theme.nebulaColor);
+    grad.addColorStop(0, activeTheme.bgRadial ? activeTheme.accent + '22' : sectorTheme.nebulaColor);
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // 3. Parallax Tinted Stars
+    // 3. Parallax Tinted Stars & Hyperspace Warp Streaks
+    const starTint = activeTheme.starTint || sectorTheme.starColor;
     this.stars.forEach(star => {
       ctx.save();
-      ctx.strokeStyle = theme.starColor;
-      ctx.fillStyle = theme.starColor;
+      ctx.strokeStyle = starTint;
+      ctx.fillStyle = starTint;
       ctx.globalAlpha = star.alpha;
 
       if (this.warpBoost > 1.5) {
-        const trailLength = star.speed * 6 * (this.warpBoost - 1);
-        ctx.lineWidth = star.size;
+        const trailLength = star.speed * 12 * (this.warpBoost - 1);
+        ctx.lineWidth = Math.max(1.5, star.size * 1.2);
         ctx.beginPath();
         ctx.moveTo(star.x, star.y);
         ctx.lineTo(star.x, star.y - trailLength);
@@ -147,4 +158,5 @@ export class Starfield {
     });
   }
 }
+
 

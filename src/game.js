@@ -1,4 +1,3 @@
-// Master Game Engine with 0.5s Death Slow-Mo, Ship Polygon Debris, & Coin Magnetization for FinalOrbit
 import { Starfield, changeWaveBackground } from './starfield.js';
 import { Player, SHIP_AVATARS } from './player.js';
 import { Enemy } from './enemy.js';
@@ -12,10 +11,12 @@ import { ShopManager } from './shop.js';
 import { AugmentManager } from './augments.js';
 import { LeaderboardManager } from './leaderboard.js';
 import { QuestManager } from './quests.js';
+import { themeManager } from './theme.js';
 
 export const GAME_STATES = {
   START: 'START',
   PLAYING: 'PLAYING',
+  PLAYING_1V1: 'PLAYING_1V1',
   PAUSED: 'PAUSED',
   PERK_DRAFT: 'PERK_DRAFT',
   GAME_OVER: 'GAME_OVER',
@@ -503,6 +504,47 @@ export class Game {
     }
   }
 
+  startDuelGame(duelManager) {
+    this.resetGameSession();
+    this.duelManager = duelManager;
+    this.endlessMode = false;
+    this.score = 0;
+    this.wave = 1;
+    this.enemies = [];
+    this.bullets = [];
+    this.powerups = [];
+    this.hazards = [];
+    this.waveEnemiesToSpawn = [];
+    this.waveInProgress = false;
+    this.particleSystem.clear();
+
+    this.player.reset(this.canvas.width, this.canvas.height, this.shop.upgrades);
+    this.state = GAME_STATES.PLAYING_1V1;
+    soundManager.startAdaptiveMusic();
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('pause-screen').classList.add('hidden');
+    document.getElementById('game-over-screen').classList.add('hidden');
+    document.getElementById('victory-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('hud').classList.remove('hidden');
+
+    const isTouchDev = ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
+    const mBomb = document.getElementById('mobile-bomb-btn');
+    const mDash = document.getElementById('mobile-dash-btn');
+    if (mBomb && isTouchDev) { mBomb.classList.remove('hidden'); mBomb.classList.add('active'); }
+    if (mDash && isTouchDev) { mDash.classList.remove('hidden'); mDash.classList.add('active'); }
+
+    this.particleSystem.addFloatingText(this.canvas.width / 2, this.canvas.height / 2 - 40, '⚡ 1v1 DUEL BEGINS! ⚡', '#ff0077', 28);
+  }
+
+  spawnOpponentLaser(rawX, rawY) {
+    const oppX = this.canvas.width - rawX;
+    const oppY = Math.max(60, rawY);
+    const laserColor = themeManager.getTheme().alarm || '#ff0055';
+    this.bullets.push(new Bullet(oppX, oppY + 20, 0, 7, true, 'dual', 15, {}));
+  }
+
   togglePause() {
     if (this.state === GAME_STATES.PLAYING) {
       this.state = GAME_STATES.PAUSED;
@@ -966,7 +1008,11 @@ export class Game {
     const speedMult = (this.isChronoActive ? 0.25 : 1.0) * this.timeScale;
     this.starfield.update(dt * speedMult);
 
-    if (this.state !== GAME_STATES.PLAYING) return;
+    if (this.state !== GAME_STATES.PLAYING && this.state !== GAME_STATES.PLAYING_1V1) return;
+
+    if (this.state === GAME_STATES.PLAYING_1V1 && this.duelManager) {
+      this.duelManager.broadcastPlayerState(this.player);
+    }
 
     const hpPercent = (this.player.health / this.player.maxHealth) * 100;
     soundManager.setLowHealth(hpPercent < 25 && hpPercent > 0);
@@ -1012,6 +1058,9 @@ export class Game {
       );
       if (newBullets.length > 0) {
         this.bullets.push(...newBullets);
+        if (this.state === GAME_STATES.PLAYING_1V1 && this.duelManager) {
+          this.duelManager.broadcastShoot(this.player.x, this.player.y);
+        }
       }
     }
 
@@ -1198,8 +1247,40 @@ export class Game {
     this.bullets.forEach(b => b.draw(this.ctx));
     this.enemies.forEach(e => e.draw(this.ctx));
 
-    if (this.state === GAME_STATES.PLAYING || this.state === GAME_STATES.PAUSED) {
+    if (this.state === GAME_STATES.PLAYING || this.state === GAME_STATES.PLAYING_1V1 || this.state === GAME_STATES.PAUSED) {
       this.player.draw(this.ctx, this.particleSystem);
+    }
+
+    if (this.state === GAME_STATES.PLAYING_1V1 && this.duelManager && this.duelManager.inMatch) {
+      const oppData = this.duelManager.opponentData;
+      const oppX = this.canvas.width - oppData.x;
+      const oppY = 70;
+
+      this.ctx.save();
+      this.ctx.translate(oppX, oppY);
+      this.ctx.rotate(Math.PI); // Facing downward toward local player!
+
+      // Opponent Ship Model (Crimson Red Fighter)
+      this.ctx.fillStyle = '#ff0055';
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, -24);
+      this.ctx.lineTo(-20, 24);
+      this.ctx.lineTo(-10, 12);
+      this.ctx.lineTo(0, 18);
+      this.ctx.lineTo(10, 12);
+      this.ctx.lineTo(20, 24);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      this.ctx.fillStyle = '#ffea00';
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, -10);
+      this.ctx.lineTo(-6, 10);
+      this.ctx.lineTo(6, 10);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      this.ctx.restore();
     }
 
     this.particleSystem.draw(this.ctx);

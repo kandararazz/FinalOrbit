@@ -1,5 +1,5 @@
-// Enemy Entities, Kamikaze Stingers, Shield Anchors, & Glitch Splits for FinalOrbit
 import { Bullet } from './bullet.js';
+import { themeManager } from './theme.js';
 
 export class Enemy {
   constructor(x, y, type = 'drone', wave = 1, isGlitch = false) {
@@ -285,10 +285,16 @@ export class Enemy {
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    const theme = themeManager.getTheme();
+    if (theme.wireframe) {
+      ctx.strokeStyle = this.flashTimer > 0 ? '#ffffff' : theme.accent;
+      ctx.lineWidth = 1.8;
+    }
+
     if (this.flashTimer > 0) {
       ctx.fillStyle = '#ffffff';
     } else {
-      ctx.fillStyle = this.color;
+      ctx.fillStyle = theme.wireframe ? 'transparent' : this.color;
     }
 
     const halfW = this.width / 2;

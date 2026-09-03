@@ -1,7 +1,9 @@
 // Player Fighter Ship, Avatars, & Perk Application for FinalOrbit
 import { WeaponSystem } from './weapons.js';
-import { MagnetDrone } from './drone.js';
+import { MagnetDrone, WingmanDrone } from './drone.js';
 import { soundManager } from './audio.js';
+import { getPilotProgress } from './leaderboard.js';
+import { themeManager } from './theme.js';
 
 export const SHIP_AVATARS = {
   viper: { name: 'Viper', color: '#00f0ff', accent: '#ffffff', shape: 'viper', laserColor: '#00f0ff' },
@@ -78,6 +80,10 @@ export class Player {
     this.autoFirePermanent = false;
 
     this.equippedAvatar = 'apex_viper'; // Default skin
+    this.wingmen = [];
+    this.overdriveMeter = 0;
+    this.isOverdriveActive = false;
+    this.overdriveTimer = 0;
   }
 
   setAvatar(avatarId) {
@@ -123,9 +129,13 @@ export class Player {
     this.dashTimer = 0;
     this.empCooldown = 0;
     this.invertedTimer = 0;
-    this.globalMagnetTimer = 0;
+    this.invulnerableTimer = 0;
     this.overchargeInvulnerableTimer = 0;
-    this.hitFlashTimer = 0;
+    this.wingmen = [];
+    this.overdriveMeter = 0;
+    this.isOverdriveActive = false;
+    this.overdriveTimer = 0;
+    this.autoFirePermanent = false;
   }
 
   applyPerks(perks = {}) {
@@ -163,8 +173,50 @@ export class Player {
     return true;
   }
 
-  takeDamage(amount) {
-    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0 || this.isInvulnerable) return false;
+  deployWingmen() {
+    this.wingmen = [
+      new WingmanDrone(this, 'left'),
+      new WingmanDrone(this, 'right')
+    ];
+  }
+
+  absorbHitWithWingman(particleSystem) {
+    if (this.wingmen && this.wingmen.length > 0) {
+      const w = this.wingmen.pop();
+      if (w && particleSystem) {
+        particleSystem.createExplosion(w.x, w.y, 25, '#ffea00', 1.2);
+      }
+      this.isInvulnerable = true;
+      this.invulnerableTimer = 30;
+      soundManager.playHit();
+      return true;
+    }
+    return false;
+  }
+
+  chargeOverdrive(amount) {
+    if (!this.isOverdriveActive) {
+      this.overdriveMeter = Math.min(100, this.overdriveMeter + amount);
+    }
+  }
+
+  triggerOverdrive() {
+    if (this.overdriveMeter >= 100 && !this.isOverdriveActive) {
+      this.overdriveMeter = 0;
+      this.isOverdriveActive = true;
+      this.overdriveTimer = 480; // 8 seconds (480 frames)
+      soundManager.playOverdrive();
+      return true;
+    }
+    return false;
+  }
+
+  takeDamage(amount, particleSystem = null) {
+    if (this.dashTimer > 0 || this.overchargeInvulnerableTimer > 0 || this.isInvulnerable || this.isOverdriveActive) return false;
+
+    if (this.absorbHitWithWingman(particleSystem)) {
+      return 'WINGMAN_ABSORB';
+    }
 
     this.shieldRechargeDelay = this.baseRechargeDelayMax;
     this.hitFlashTimer = 6; // Flash ship sprite white/red for 100ms
@@ -339,7 +391,15 @@ export class Player {
       this.drone.setPullRadius(800);
     }
 
+    if (this.isOverdriveActive) {
+      this.overdriveTimer--;
+      if (this.overdriveTimer <= 0) {
+        this.isOverdriveActive = false;
+      }
+    }
+
     this.drone.update(this);
+    this.wingmen.forEach(w => w.update(this, window.gameInstance ? window.gameInstance.enemies : [], window.gameInstance ? window.gameInstance.bullets : []));
     this.barrierAngle += 0.08;
   }
 
@@ -357,20 +417,22 @@ export class Player {
     });
 
     this.drone.draw(ctx);
+    this.wingmen.forEach(w => w.draw(ctx));
 
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.bankAngle);
 
     // Flashing translucent red effect during 800ms i-frames!
-    if ((this.isInvulnerable || this.overchargeInvulnerableTimer > 0) && Math.floor(Date.now() / 80) % 2 === 0) {
+    if ((this.isInvulnerable || this.overchargeInvulnerableTimer > 0 || this.isOverdriveActive) && Math.floor(Date.now() / 80) % 2 === 0) {
       ctx.globalAlpha = 0.35;
     }
 
     const noseY = this.height / 2;
     const exhaustX = this.bankAngle * 15;
-    particleSystem.createThrusterParticle(this.x - 8 + exhaustX, this.y + noseY);
-    particleSystem.createThrusterParticle(this.x + 8 + exhaustX, this.y + noseY);
+    const thrusterColor = getPilotProgress().thrusterColor || '#00f0ff';
+    particleSystem.spawnParticle(this.x - 8 + exhaustX, this.y + noseY, thrusterColor, (Math.random() - 0.5) * 1.5, Math.random() * 3 + 2, 2.5, 10);
+    particleSystem.spawnParticle(this.x + 8 + exhaustX, this.y + noseY, thrusterColor, (Math.random() - 0.5) * 1.5, Math.random() * 3 + 2, 2.5, 10);
 
     if (this.hitFlashTimer > 0) {
       ctx.fillStyle = Math.floor(Date.now() / 50) % 2 === 0 ? '#ffffff' : '#ff0033';
