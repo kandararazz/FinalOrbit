@@ -1002,10 +1002,14 @@ export class Game {
     if (this.waveInProgress) {
       this.spawnTimer += speedMult;
       const spawnedThisFrameX = [];
-      for (let i = this.waveEnemiesToSpawn.length - 1; i >= 0; i--) {
-        if (this.enemies.length >= 15) break;
+
+      for (let i = 0; i < this.waveEnemiesToSpawn.length; i++) {
         const item = this.waveEnemiesToSpawn[i];
         if (this.spawnTimer >= item.delay) {
+          if (this.enemies.length >= 15) {
+            break;
+          }
+
           const baseX = item.baseX !== undefined ? item.baseX : (Math.random() * (this.canvas.width - 160) + 80);
           const offsetX = item.offsetX || 0;
           let spawnX = Math.max(30, Math.min(this.canvas.width - 30, baseX + offsetX));
@@ -1032,10 +1036,13 @@ export class Game {
           const isGlitch = Math.random() < 0.15;
           this.enemies.push(new Enemy(spawnX, initialY, item.type, this.wave, isGlitch));
           this.waveEnemiesToSpawn.splice(i, 1);
+          i--;
+        } else {
+          break;
         }
       }
 
-      if (this.waveEnemiesToSpawn.length === 0 && this.enemies.length === 0 && this.hazards.length === 0) {
+      if (this.waveEnemiesToSpawn.length === 0 && this.enemies.length === 0) {
         this.waveInProgress = false;
 
         if (this.isCustomWaveMode) {

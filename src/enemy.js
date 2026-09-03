@@ -171,7 +171,7 @@ export class Enemy {
         const dy = playerY - this.y;
         const angle = Math.atan2(dy, dx);
         this.x += Math.cos(angle) * 5.5 + Math.sin(this.animTimer * 4) * 1.5;
-        this.y += Math.sin(angle) * 5.5;
+        this.y += Math.max(0.8, Math.sin(angle) * 5.5);
       } else {
         // S-Curve Weaver approach
         this.y += this.speedY;
@@ -195,7 +195,7 @@ export class Enemy {
       const dy = playerY - this.y;
       const dist = Math.hypot(dx, dy) || 1;
       this.x += (dx / dist) * this.speedY + Math.sin(this.animTimer * 3) * 2;
-      this.y += (dy / dist) * this.speedY;
+      this.y += Math.max(0.8, (dy / dist) * this.speedY);
     } else if (this.type === 'anchor') {
       this.y += this.speedY;
       if (!this.tetherTarget || !this.tetherTarget.active) {
@@ -260,6 +260,7 @@ export class Enemy {
   }
 
   isOutOfBounds(width, height) {
+    if (this.type === 'boss') return false;
     return (
       this.y > height + 60 ||
       this.y < -200 ||
