@@ -27,25 +27,29 @@ export class LeaderboardManager {
   loadPilotName() {
     try {
       const saved = localStorage.getItem('final_orbit_pilot_name');
-      if (saved && saved.trim()) return saved.trim().toUpperCase().slice(0, 12);
+      if (saved && saved.trim()) return saved.trim();
     } catch (e) {}
     return 'PILOT_RAZA';
   }
 
-  setPilotName(name) {
-    const clean = (name || 'PILOT').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 12) || 'PILOT';
+  setPilotName(name, activeElement = null) {
+    const clean = (name !== undefined && name !== null) ? name : 'PILOT_RAZA';
     this.pilotName = clean;
-    try {
-      localStorage.setItem('final_orbit_pilot_name', clean);
-    } catch (e) {}
-    this.syncInputFields();
+    if (clean.trim()) {
+      try {
+        localStorage.setItem('final_orbit_pilot_name', clean.trim());
+      } catch (e) {}
+    }
+    this.syncInputFields(activeElement);
   }
 
-  syncInputFields() {
+  syncInputFields(activeElement = null) {
     ['pilot-callsign-input', 'gameover-callsign-input', 'leaderboard-callsign-input'].forEach(id => {
       const el = document.getElementById(id);
-      if (el && el.value !== this.pilotName) {
-        el.value = this.pilotName;
+      if (el && el !== activeElement && el !== document.activeElement) {
+        if (el.value !== this.pilotName) {
+          el.value = this.pilotName || '';
+        }
       }
     });
   }
@@ -55,11 +59,14 @@ export class LeaderboardManager {
       const el = document.getElementById(id);
       if (!el) return;
       el.value = this.pilotName;
+      el.addEventListener('focus', () => {
+        el.select();
+      });
       el.addEventListener('input', (e) => {
-        this.setPilotName(e.target.value);
+        this.setPilotName(e.target.value, e.target);
       });
       el.addEventListener('change', (e) => {
-        this.setPilotName(e.target.value);
+        this.setPilotName(e.target.value, e.target);
       });
     };
 
@@ -71,7 +78,11 @@ export class LeaderboardManager {
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
         const el = document.getElementById('leaderboard-callsign-input');
-        if (el) this.setPilotName(el.value);
+        if (el) {
+          this.setPilotName(el.value);
+          saveBtn.textContent = 'SAVED!';
+          setTimeout(() => { saveBtn.textContent = 'SAVE'; }, 1500);
+        }
       });
     }
   }
@@ -149,9 +160,11 @@ export class LeaderboardManager {
   }
 
   addScore(score, wave, pilotName) {
-    const nameToUse = pilotName || this.pilotName || 'PILOT_RAZA';
+    let nameToUse = pilotName || this.pilotName;
+    if (!nameToUse || !nameToUse.trim()) nameToUse = 'PILOT_RAZA';
+    const cleanName = nameToUse.trim().toUpperCase().slice(0, 15);
     const newEntry = {
-      name: (nameToUse || 'PILOT').toUpperCase().slice(0, 12),
+      name: cleanName,
       score: Number(score) || 0,
       wave: Number(wave) || 1
     };
