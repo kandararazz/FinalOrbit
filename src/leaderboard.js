@@ -1,6 +1,7 @@
 // Leaderboard Manager with Supabase Cloud Integration & Local Storage Fallback for FinalOrbit
 
 const LEADERBOARD_KEY = 'space_shooter_leaderboard';
+const CALLSIGN_KEY = 'void_pilot_callsign';
 const MAX_ENTRIES = 10;
 
 const DEFAULT_SCORES = [
@@ -11,13 +12,35 @@ const DEFAULT_SCORES = [
   { name: 'ROOKIE', score: 3200, wave: 3 }
 ];
 
+export function sanitizeCallsign(name) {
+  if (!name || typeof name !== 'string') return 'RAZA';
+  const clean = name.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase().slice(0, 10);
+  return clean || 'RAZA';
+}
+
+export function getPilotCallsign() {
+  try {
+    const saved = localStorage.getItem(CALLSIGN_KEY);
+    if (saved && saved.trim()) return sanitizeCallsign(saved);
+  } catch (e) {}
+  return 'RAZA';
+}
+
+export function setPilotCallsign(name) {
+  const clean = sanitizeCallsign(name);
+  try {
+    localStorage.setItem(CALLSIGN_KEY, clean);
+  } catch (e) {}
+  return clean;
+}
+
 export class LeaderboardManager {
   constructor() {
     this.tableBody = document.getElementById('leaderboard-rows');
     this.supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
     this.supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-    this.pilotName = this.loadPilotName();
+    this.pilotName = getPilotCallsign();
     this.scores = this.loadScores();
     this.setupInputListeners();
     this.render();
@@ -25,32 +48,30 @@ export class LeaderboardManager {
   }
 
   loadPilotName() {
-    try {
-      const saved = localStorage.getItem('final_orbit_pilot_name');
-      if (saved && saved.trim()) return saved.trim();
-    } catch (e) {}
-    return 'PILOT_RAZA';
+    return getPilotCallsign();
   }
 
   setPilotName(name, activeElement = null) {
-    const clean = (name !== undefined && name !== null) ? name : 'PILOT_RAZA';
+    const clean = setPilotCallsign(name);
     this.pilotName = clean;
-    if (clean.trim()) {
-      try {
-        localStorage.setItem('final_orbit_pilot_name', clean.trim());
-      } catch (e) {}
-    }
     this.syncInputFields(activeElement);
+    return clean;
   }
 
   syncInputFields(activeElement = null) {
-    ['pilot-callsign-input', 'gameover-callsign-input', 'leaderboard-callsign-input'].forEach(id => {
+    const currentName = getPilotCallsign();
+    ['pilot-callsign-input', 'gameover-callsign-input', 'leaderboard-callsign-input', 'input-pilot-name'].forEach(id => {
       const el = document.getElementById(id);
       if (el && el !== activeElement && el !== document.activeElement) {
-        if (el.value !== this.pilotName) {
-          el.value = this.pilotName || '';
+        if (el.value !== currentName) {
+          el.value = currentName;
         }
       }
+    });
+
+    ['callsign-display-start', 'callsign-display-pause'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = currentName;
     });
   }
 
@@ -58,15 +79,17 @@ export class LeaderboardManager {
     const bindInput = (id) => {
       const el = document.getElementById(id);
       if (!el) return;
-      el.value = this.pilotName;
+      el.value = getPilotCallsign();
       el.addEventListener('focus', () => {
         el.select();
       });
       el.addEventListener('input', (e) => {
-        this.setPilotName(e.target.value, e.target);
+        const sanitized = sanitizeCallsign(e.target.value);
+        this.setPilotName(sanitized, e.target);
       });
       el.addEventListener('change', (e) => {
-        this.setPilotName(e.target.value, e.target);
+        const sanitized = sanitizeCallsign(e.target.value);
+        this.setPilotName(sanitized, e.target);
       });
     };
 
@@ -85,6 +108,8 @@ export class LeaderboardManager {
         }
       });
     }
+
+    this.syncInputFields();
   }
 
   loadScores() {
@@ -124,7 +149,7 @@ export class LeaderboardManager {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           this.scores = data.map(item => ({
-            name: (item.pilot_name || item.name || 'PILOT').toUpperCase().slice(0, 12),
+            name: sanitizeCallsign(item.pilot_name || item.name || 'RAZA'),
             score: Number(item.score) || 0,
             wave: Number(item.wave) || 1
           }));
@@ -160,9 +185,7 @@ export class LeaderboardManager {
   }
 
   addScore(score, wave, pilotName) {
-    let nameToUse = pilotName || this.pilotName;
-    if (!nameToUse || !nameToUse.trim()) nameToUse = 'PILOT_RAZA';
-    const cleanName = nameToUse.trim().toUpperCase().slice(0, 15);
+    const cleanName = sanitizeCallsign(pilotName || getPilotCallsign());
     const newEntry = {
       name: cleanName,
       score: Number(score) || 0,

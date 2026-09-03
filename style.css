@@ -1908,5 +1908,98 @@ canvas#editor-canvas {
   padding-top: 14px;
 }
 
+/* Pilot Callsign Badge & Cyberpunk Entry Modal */
+.pilot-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.pause-badge-wrapper {
+  justify-content: center;
+}
+
+.badge-label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #8fa0c0;
+  letter-spacing: 1px;
+}
+
+.callsign-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(4, 15, 30, 0.85);
+  border: 1.5px solid #00f0ff;
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: var(--gold-color);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.callsign-badge-btn:hover {
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.callsign-badge-btn .badge-icon {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.callsign-modal-overlay {
+  background: rgba(4, 7, 18, 0.88) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+}
+
+.callsign-modal-panel {
+  max-width: 420px;
+  text-align: center;
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.4), inset 0 0 15px rgba(0, 240, 255, 0.1) !important;
+}
+
+.callsign-input-container {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.callsign-cyber-input {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  background: rgba(3, 8, 20, 0.9);
+  border: 2px solid #00f0ff;
+  border-radius: 8px;
+  padding: 12px 20px;
+  width: 240px;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.15);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.callsign-cyber-input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), inset 0 0 12px rgba(255, 215, 0, 0.2);
+}
+
+
 
 

@@ -171,6 +171,7 @@ class SoundManager {
         try {
           osc.disconnect();
           gain.disconnect();
+          if (filter) filter.disconnect();
         } catch (e) {}
       };
 

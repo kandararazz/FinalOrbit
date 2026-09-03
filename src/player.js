@@ -447,8 +447,9 @@ export class Player {
     ctx.closePath();
     ctx.fill();
 
+    ctx.restore();
+
     if (this.barrierHits > 0) {
-      ctx.restore();
       ctx.save();
       ctx.translate(this.x, this.y);
       ctx.rotate(this.barrierAngle);
@@ -463,9 +464,8 @@ export class Player {
         ctx.arc(bx, by, 5, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
-
-    ctx.restore();
   }
 
   // Forgiving Hitbox: Use 70% of player visual sprite size for collision checks

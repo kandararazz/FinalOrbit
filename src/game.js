@@ -22,7 +22,14 @@ export const GAME_STATES = {
   VICTORY: 'VICTORY'
 };
 
-let isGameLoopRunning = false;
+let animationFrameId = null;
+
+function gameLoop(timestamp) {
+  if (window.gameInstance) {
+    window.gameInstance.loop(timestamp);
+  }
+  animationFrameId = requestAnimationFrame(gameLoop);
+}
 
 export function getWaveData(waveNum) {
   const isBossWave = (waveNum % 10 === 0);
@@ -416,7 +423,15 @@ export class Game {
     this.hud.updateHighScoreDisplay();
   }
 
+  resetGameSession() {
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+  }
+
   startNewGame(endless = false) {
+    this.resetGameSession();
     this.endlessMode = endless;
     this.score = 0;
     this.wave = 1;
@@ -465,6 +480,7 @@ export class Game {
   }
 
   playCustomWave(jsonConfig) {
+    this.resetGameSession();
     this.startNewGame();
     this.isCustomWaveMode = true;
     this.waveEnemiesToSpawn = [];
@@ -1079,18 +1095,17 @@ export class Game {
       }
     }
 
-    // Cap active obstacles (asteroids/mines) to a maximum of 6
-    const activeObstacles = this.hazards.filter(h => (h instanceof Asteroid || h instanceof EnergySpikeMine) && h.active);
-    if (activeObstacles.length > 6) {
-      let excessObstacles = activeObstacles.length - 6;
-      for (let i = 0; i < this.hazards.length && excessObstacles > 0; i++) {
-        const h = this.hazards[i];
-        if (h instanceof Asteroid || h instanceof EnergySpikeMine) {
-          this.hazards.splice(i, 1);
-          i--;
-          excessObstacles--;
-        }
-      }
+    // Hard-Cap entity arrays every frame so memory cannot explode
+    if (this.enemies.length > 12) {
+      this.enemies.splice(0, this.enemies.length - 12);
+    }
+
+    if (this.hazards.length > 6) {
+      this.hazards.splice(0, this.hazards.length - 6);
+    }
+
+    if (this.particleSystem.particles.length > 80) {
+      this.particleSystem.particles.splice(0, this.particleSystem.particles.length - 80);
     }
 
     for (let i = this.hazards.length - 1; i >= 0; i--) {
@@ -1121,29 +1136,36 @@ export class Game {
       }
     }
 
-    // Cap hostile enemy bullets to max 40. Drop older bullets if array exceeds 40.
-    let hostileCount = 0;
-    for (let i = 0; i < this.bullets.length; i++) {
-      if (this.bullets[i].isEnemy && this.bullets[i].active) hostileCount++;
-    }
-    if (hostileCount > 40) {
-      let excessBullets = hostileCount - 40;
-      for (let i = 0; i < this.bullets.length && excessBullets > 0; i++) {
-        if (this.bullets[i].isEnemy) {
-          this.bullets.splice(i, 1);
-          i--;
-          excessBullets--;
-        }
-      }
-    }
-
+    // Update bullets and split into player/enemy bullet arrays for strict caps & 4-sided boundary culling
     for (let i = this.bullets.length - 1; i >= 0; i--) {
       const b = this.bullets[i];
       b.update(this.canvas.width, this.canvas.height, this.enemies);
-      if (b.isOutOfBounds(this.canvas.width, this.canvas.height) || !b.active) {
-        this.bullets.splice(i, 1);
+    }
+
+    let playerBullets = this.bullets.filter(b => !b.isEnemy);
+    let enemyBullets = this.bullets.filter(b => b.isEnemy);
+
+    if (playerBullets.length > 30) {
+      playerBullets.splice(0, playerBullets.length - 30);
+    }
+    if (enemyBullets.length > 50) {
+      enemyBullets.splice(0, enemyBullets.length - 50);
+    }
+
+    // 4-Sided Boundary Culling (No Leaking Coordinates)
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
+      const b = playerBullets[i];
+      if (b.y < -30 || b.y > this.canvas.height + 30 || b.x < -30 || b.x > this.canvas.width + 30 || !b.active) {
+        playerBullets.splice(i, 1);
       }
     }
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const b = enemyBullets[i];
+      if (b.y < -30 || b.y > this.canvas.height + 30 || b.x < -30 || b.x > this.canvas.width + 30 || !b.active) {
+        enemyBullets.splice(i, 1);
+      }
+    }
+    this.bullets = [...playerBullets, ...enemyBullets];
 
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const p = this.powerups[i];
@@ -1186,22 +1208,17 @@ export class Game {
   }
 
   loop(timestamp) {
-    const dt = (timestamp - this.lastTime) / 1000;
+    if (!this.lastTime) this.lastTime = timestamp;
+    const dt = Math.min(0.1, (timestamp - this.lastTime) / 1000);
     this.lastTime = timestamp;
 
     this.update(dt);
     this.render();
-
-    requestAnimationFrame(this.loop.bind(this));
   }
 
   run() {
-    if (!isGameLoopRunning) {
-      isGameLoopRunning = true;
-      requestAnimationFrame((ts) => {
-        this.lastTime = ts;
-        requestAnimationFrame(this.loop.bind(this));
-      });
+    if (!animationFrameId) {
+      animationFrameId = requestAnimationFrame(gameLoop);
     }
   }
 }

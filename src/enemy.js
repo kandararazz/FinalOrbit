@@ -270,12 +270,8 @@ export class Enemy {
   }
 
   draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-
     // Draw Shield Anchor Tether Invulnerability Beam!
     if (this.type === 'anchor' && this.tetherTarget && this.tetherTarget.active) {
-      ctx.restore();
       ctx.save();
       ctx.strokeStyle = '#00ff66';
       ctx.lineWidth = 3;
@@ -284,9 +280,10 @@ export class Enemy {
       ctx.lineTo(this.tetherTarget.x, this.tetherTarget.y);
       ctx.stroke();
       ctx.restore();
-      ctx.save();
-      ctx.translate(this.x, this.y);
     }
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
 
     if (this.flashTimer > 0) {
       ctx.fillStyle = '#ffffff';

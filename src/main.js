@@ -250,10 +250,70 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Pilot Callsign System Modal Integration
+  const callsignModal = document.getElementById('callsign-modal');
+  const inputPilotName = document.getElementById('input-pilot-name');
+  const btnCallsignConfirm = document.getElementById('btn-callsign-confirm');
+  const btnCallsignCancel = document.getElementById('btn-callsign-cancel');
+  const btnCallsignStart = document.getElementById('btn-callsign-start');
+  const btnCallsignPause = document.getElementById('btn-callsign-pause');
+
+  function openCallsignModal() {
+    if (!callsignModal || !inputPilotName) return;
+    const current = game.leaderboard.loadPilotName();
+    inputPilotName.value = current;
+    callsignModal.classList.remove('hidden');
+    setTimeout(() => {
+      inputPilotName.focus();
+      inputPilotName.select();
+    }, 50);
+  }
+
+  function closeCallsignModal() {
+    if (callsignModal) callsignModal.classList.add('hidden');
+  }
+
+  function saveCallsignFromModal() {
+    if (!inputPilotName) return;
+    game.leaderboard.setPilotName(inputPilotName.value);
+    closeCallsignModal();
+  }
+
+  if (btnCallsignStart) btnCallsignStart.addEventListener('click', openCallsignModal);
+  if (btnCallsignPause) btnCallsignPause.addEventListener('click', openCallsignModal);
+
+  if (btnCallsignConfirm) {
+    btnCallsignConfirm.addEventListener('click', saveCallsignFromModal);
+  }
+
+  if (btnCallsignCancel) {
+    btnCallsignCancel.addEventListener('click', closeCallsignModal);
+  }
+
+  if (inputPilotName) {
+    inputPilotName.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        saveCallsignFromModal();
+      } else if (e.key === 'Escape') {
+        closeCallsignModal();
+      }
+    });
+
+    inputPilotName.addEventListener('input', (e) => {
+      const sanitized = e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase().slice(0, 10);
+      if (e.target.value !== sanitized) {
+        e.target.value = sanitized;
+      }
+    });
+  }
+
   window.addEventListener('resize', resizeCanvas);
   window.addEventListener('orientationchange', () => {
     setTimeout(resizeCanvas, 100);
   });
+
+  // Initial sync of callsign displays
+  game.leaderboard.syncInputFields();
 
   // Run render loop
   game.run();

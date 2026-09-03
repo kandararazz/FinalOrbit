@@ -175,8 +175,14 @@
         </div>
 
         <div class="callsign-box">
-          <label for="pilot-callsign-input" class="callsign-label">👨‍✈️ PILOT CALLSIGN:</label>
-          <input type="text" id="pilot-callsign-input" class="cyber-input" maxlength="12" placeholder="ENTER CALLSIGN..." value="PILOT_RAZA" autocomplete="off" spellcheck="false">
+          <div class="pilot-badge-wrapper">
+            <span class="badge-label">PILOT:</span>
+            <button id="btn-callsign-start" class="callsign-badge-btn" title="Edit Pilot Callsign">
+              <span id="callsign-display-start" class="badge-callsign">RAZA</span>
+              <span class="badge-icon">✏️</span>
+            </button>
+          </div>
+          <input type="text" id="pilot-callsign-input" class="cyber-input hidden" maxlength="10" placeholder="RAZA" value="RAZA" autocomplete="off" spellcheck="false">
         </div>
 
         <div class="menu-actions">
@@ -439,6 +445,13 @@
     <div id="pause-screen" class="overlay-screen hidden">
       <div class="screen-content glow-panel">
         <h2 class="screen-title">SYSTEM PAUSED</h2>
+        <div class="pilot-badge-wrapper pause-badge-wrapper">
+          <span class="badge-label">PILOT:</span>
+          <button id="btn-callsign-pause" class="callsign-badge-btn" title="Edit Pilot Callsign">
+            <span id="callsign-display-pause" class="badge-callsign">RAZA</span>
+            <span class="badge-icon">✏️</span>
+          </button>
+        </div>
         <p class="author-tagline">Created by Raza</p>
         <div class="pause-actions">
           <button id="resume-btn" class="arcade-btn glow-btn">RESUME MISSION</button>
@@ -476,7 +489,7 @@
         <div class="callsign-box gameover-callsign-box">
           <label for="gameover-callsign-input" class="callsign-label">👨‍✈️ SUBMIT CALLSIGN TO LEADERBOARD:</label>
           <div class="input-row">
-            <input type="text" id="gameover-callsign-input" class="cyber-input" maxlength="12" placeholder="ENTER CALLSIGN..." value="PILOT_RAZA" autocomplete="off" spellcheck="false">
+            <input type="text" id="gameover-callsign-input" class="cyber-input" maxlength="10" placeholder="RAZA" value="RAZA" autocomplete="off" spellcheck="false">
             <button id="submit-score-btn" class="arcade-btn glow-btn inline-btn">SUBMIT</button>
           </div>
         </div>
@@ -484,6 +497,28 @@
         <div class="button-row margin-top-20">
           <button id="restart-btn" class="arcade-btn glow-btn">PLAY AGAIN</button>
           <button id="game-over-home-btn" class="arcade-btn secondary-btn">RETURN TO HANGAR / HOME</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cyberpunk Callsign Entry Modal -->
+    <div id="callsign-modal" class="overlay-screen hidden callsign-modal-overlay">
+      <div class="screen-content glow-panel cyber-menu-frame callsign-modal-panel">
+        <div class="cyber-bracket bracket-tl"></div>
+        <div class="cyber-bracket bracket-tr"></div>
+        <div class="cyber-bracket bracket-bl"></div>
+        <div class="cyber-bracket bracket-br"></div>
+
+        <h2 class="screen-title gold-text">IDENTIFICATION // CALLSIGN ENTRY</h2>
+        <p class="screen-desc">ENTER PILOT CALLSIGN (MAX 10 CHARACTERS)</p>
+
+        <div class="callsign-input-container">
+          <input type="text" id="input-pilot-name" class="callsign-cyber-input" maxlength="10" placeholder="RAZA" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="button-row margin-top-20">
+          <button id="btn-callsign-confirm" class="arcade-btn glow-btn">[ CONFIRM ]</button>
+          <button id="btn-callsign-cancel" class="arcade-btn secondary-btn">[ CANCEL ]</button>
         </div>
       </div>
     </div>
